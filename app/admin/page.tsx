@@ -39,9 +39,8 @@ export default function Admin() {
       if (response.status === 200) {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
-
-        router.push("/admin/facilities");
       }
+      router.push("/admin/home");
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed");
     }
