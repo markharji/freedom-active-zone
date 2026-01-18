@@ -1,0 +1,16 @@
+import mongoose from "mongoose";
+
+const FacilitySchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    sport: { type: String, required: true },
+    description: { type: String, required: true },
+    price: { type: Number, required: true },
+    thumbnail: { type: String },
+    rating: { type: Number, default: 0 },
+  },
+  { timestamps: true },
+);
+
+// Prevent model overwrite in dev
+export default mongoose.models.Facility || mongoose.model("Facility", FacilitySchema);

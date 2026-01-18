@@ -1,65 +1,114 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <>
+      <section
+        id="home"
+        className="relative bg-gray-900 text-white pt-24"
+        style={{
+          backgroundImage: "url('/basketball.jpg')",
+          backgroundSize: "cover", // make it cover the whole section
+          backgroundPosition: "center", // center the image
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        <div className="relative z-10 flex flex-col items-center justify-center py-32 px-6 text-center">
+          <h1 className="text-5xl font-extrabold sm:text-6xl text-gray-900">Elevate Your Game</h1>
+          <div className="relative max-w-2xl mt-4">
+            <div className="absolute inset-0 bg-black/50 rounded-lg"></div>
+            <p className="relative text-lg sm:text-xl text-white font-medium p-4">
+              Join our sports community and book courts for basketball, pickleball, and more!
+            </p>
+          </div>
+          <Link
+            href="/facilities"
+            className="mt-8 inline-block rounded-full bg-gray-900 px-8 py-3 text-lg font-bold uppercase tracking-wide hover:bg-orange-600 transition-colors duration-300 shadow-lg"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Book Your Court
+          </Link>
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* About / Facilities Section */}
+      <section id="facilities" className="py-20 px-6 bg-gray-100 text-center">
+        <h2 className="text-4xl font-bold text-gray-900">Our Facilities</h2>
+        <p className="mt-4 max-w-3xl mx-auto text-gray-700 text-lg sm:text-xl">
+          At Freedom Sports Club, we create an energetic and welcoming space for athletes of all levels. Play, train,
+          and connect with others in our top-notch sports facilities.
+        </p>
+        <div className="mt-12 flex flex-wrap justify-center gap-8">
+          <div className="w-64 rounded-lg bg-white shadow-lg p-6 hover:scale-105 transition-transform">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Basketball Courts</h3>
+            <p className="text-gray-600">Premium indoor and outdoor courts designed for competitive and casual play.</p>
+          </div>
+          <div className="w-64 rounded-lg bg-white shadow-lg p-6 hover:scale-105 transition-transform">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Pickleball</h3>
+            <p className="text-gray-600">
+              Enjoy our modern pickleball courts with professional-grade flooring and nets.
+            </p>
+          </div>
+          <div className="w-64 rounded-lg bg-white shadow-lg p-6 hover:scale-105 transition-transform">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Fitness & Training</h3>
+            <p className="text-gray-600">
+              Train with certified coaches and fitness trainers in a supportive environment.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery Section */}
+      <section id="apparel" className="py-20 px-6 bg-white text-center">
+        <h2 className="text-4xl font-bold text-gray-900 mb-12">Apparel & Merchandise</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {["/img1.jpg", "/img2.jpg", "/img3.jpg", "/img4.jpg", "/img5.jpg", "/img6.jpg"].map((src, i) => (
+            <div
+              key={i}
+              className="relative h-64 rounded-lg overflow-hidden shadow-lg hover:scale-105 transition-transform"
+            >
+              <Image src={src} alt={`Merchandise ${i + 1}`} fill className="object-cover" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      {/* <section id="contact" className="bg-gray-900 text-white py-20 px-6">
+        <div className="max-w-xl mx-auto text-center">
+          <h2 className="text-4xl font-bold mb-4">Contact Us</h2>
+          <p className="text-orange-400 mb-8">Have questions or want to book a court? Send us a message!</p>
+          <form className="grid gap-4">
+            <input type="text" placeholder="Your Name" className="w-full rounded-md border-none p-3 text-gray-900" />
+            <input type="email" placeholder="Your Email" className="w-full rounded-md border-none p-3 text-gray-900" />
+            <textarea placeholder="Your Message" className="w-full rounded-md border-none p-3 text-gray-900" rows={4} />
+            <button className="rounded-full bg-orange-500 py-3 font-bold uppercase tracking-wide hover:bg-orange-600 transition-colors">
+              Send Message
+            </button>
+          </form>
+          <div className="mt-8 text-gray-300">
+            <p>Freedom Sports Club</p>
+            <p>Zamboanga City, Philippines</p>
+            <p>+63 992 5111</p>
+          </div>
+        </div>
+      </section> */}
+
+      {/* Footer Section */}
+      <footer className="bg-gray-800 py-12 text-center text-white">
+        <h3 className="text-2xl font-semibold text-orange-400">Get 10% Off Your First Booking!</h3>
+        <form className="mt-4 flex justify-center gap-2 flex-wrap">
+          <input
+            type="email"
+            placeholder="Your Email"
+            className="rounded-l-full p-3 text-white-900 min-w-[250px] border-2 border-white"
+          />
+          <button className="rounded-r-full bg-gray-900 px-6 py-3 font-bold hover:bg-orange-600 transition-colors">
+            Sign Up
+          </button>
+        </form>
+        <p className="mt-6 text-sm text-gray-400">&copy; 2026 Freedom Sports Club. All rights reserved.</p>
+      </footer>
+    </>
   );
 }
