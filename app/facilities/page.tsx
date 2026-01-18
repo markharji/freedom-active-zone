@@ -6,6 +6,7 @@ import TitlePage from "../components/TitlePage";
 import Filters from "../components/Filters";
 import { Drawer, IconButton, Button } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import toast from "react-hot-toast";
 
 export default function Facilities() {
   const [selectedSports, setSelectedSports] = useState([]);

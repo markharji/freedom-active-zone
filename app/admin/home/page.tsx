@@ -12,7 +12,7 @@ export default function AdminHomePage() {
   const [apparelTransactions, setApparelTransactions] = useState([]);
 
   const fetchFacilityTransactions = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}api/facility-transactions`, {
+    const res = await fetch(`api/facility-transactions`, {
       cache: "no-store",
     });
     if (!res.ok) throw new Error("Failed to fetch facility transactions");
@@ -22,8 +22,8 @@ export default function AdminHomePage() {
 
   // Fetch apparel transactions
   const fetchApparelTransactions = async () => {
-    console.log(`${process.env.NEXT_PUBLIC_BASE_URL}api/apparel-transactions`);
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}api/apparel-transactions`);
+    console.log(`api/apparel-transactions`);
+    const res = await fetch(`api/apparel-transactions`);
     if (!res.ok) throw new Error("Failed to fetch apparel transactions");
     const data = await res.json();
     setApparelTransactions(data);
