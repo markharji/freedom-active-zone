@@ -1,10 +1,32 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Filters from "../components/Filters";
 import ProductCard from "../components/ProductCard";
 import TitlePage from "../components/TitlePage";
+import toast from "react-hot-toast";
 
-export default async function Apparel() {
-  const apparelsFetch = await fetch("http://localhost:3000/api/apparels");
-  const apparels = await apparelsFetch.json();
+export default function Apparel() {
+  const [loading, setLoading] = useState(false);
+  const [apparels, setApparels] = useState([]);
+
+  const fetchApparels = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/apparels"); // create this API
+      if (!res.ok) throw new Error("Failed to fetch facilities");
+      const data = await res.json();
+      setApparels(data);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApparels();
+  }, []);
 
   return (
     <>
