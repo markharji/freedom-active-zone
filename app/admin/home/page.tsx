@@ -4,6 +4,7 @@ import ApparelTransactionsTable from "@/app/components/ApparelTransactionsTable"
 import FacilityTransactionsTable from "@/app/components/FacilityTransactionsTable";
 import TabsWrapper from "@/app/components/TabsWrapper";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 // Fetch facility transactions
 
@@ -12,20 +13,27 @@ export default function AdminHomePage() {
   const [apparelTransactions, setApparelTransactions] = useState([]);
 
   const fetchFacilityTransactions = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}api/facility-transactions`, {
-      cache: "no-store",
-    });
-    if (!res.ok) throw new Error("Failed to fetch facility transactions");
-    const data = await res.json();
-    setFacilityTransactions(data);
+    try {
+      const res = await fetch(`/api/facility-transactions`);
+      if (!res.ok) throw new Error("Failed to fetch facility transactions");
+      const data = await res.json();
+      setFacilityTransactions(data);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+    }
   };
 
-  // Fetch apparel transactions
   const fetchApparelTransactions = async () => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}api/apparel-transactions`);
-    if (!res.ok) throw new Error("Failed to fetch apparel transactions");
-    const data = await res.json();
-    setApparelTransactions(data);
+    try {
+      const res = await fetch(`/api/apparel-transactions`);
+      if (!res.ok) throw new Error("Failed to fetch apparel transactions");
+      const data = await res.json();
+      setApparelTransactions(data);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+    }
   };
 
   useEffect(() => {

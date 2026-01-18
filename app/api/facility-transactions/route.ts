@@ -35,8 +35,6 @@ export async function GET(req) {
       filter.date = dateStr;
     }
 
-    console.log(filter);
-
     const transactions = await FacilityTransaction.find(filter).populate("facility");
 
     return NextResponse.json(transactions);
