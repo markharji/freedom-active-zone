@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Typography, Stack, Button, Chip, Box } from "@mui/material";
 import toast from "react-hot-toast";
+import TransactionFilter from "./TransactionFilter";
 
 export const customStyles = {
   header: {
@@ -21,17 +22,39 @@ export const customStyles = {
   },
 };
 
-interface Props {
-  data: any[];
-  fetchApparelTransactions?: () => void; // optional callback to refresh table
-}
-
-export default function ApparelTransactionsTable({ data, fetchApparelTransactions }: Props) {
+export default function ApparelTransactionsTable() {
   const [open, setOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [transactionToCancel, setTransactionToCancel] = useState<any>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [date, setDate] = useState(null);
+
+  const [apparelTransactions, setApparelTransactions] = useState([]);
+
+  const fetchApparelTransactions = async () => {
+    try {
+      const params = new URLSearchParams();
+      params.append("search", search);
+      if (date) {
+        params.append("date", date?.format("DD-MM-YYYY"));
+      }
+
+      const res = await fetch(`/api/facility-transactions?${params.toString()}`);
+
+      if (!res.ok) throw new Error("Failed to fetch apparel transactions");
+      const data = await res.json();
+      setApparelTransactions(data);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+    }
+  };
+
+  useEffect(() => {
+    fetchApparelTransactions();
+  }, [search, date]);
 
   const handleRowClick = (row: any) => {
     setSelectedTransaction(row);
@@ -116,9 +139,10 @@ export default function ApparelTransactionsTable({ data, fetchApparelTransaction
 
   return (
     <>
+      <TransactionFilter setDate={setDate} date={date} search={search} setSearch={setSearch} />
       <DataTable
         columns={columns}
-        data={data}
+        data={apparelTransactions}
         pagination
         highlightOnHover
         striped

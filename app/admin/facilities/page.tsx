@@ -40,7 +40,11 @@ export default function AdminFacilities() {
   const fetchFacilities = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/facilities"); // create this API
+      const params = new URLSearchParams();
+      params.append("sports", JSON.stringify(selectedSports));
+      params.append("prices", JSON.stringify(selectedPrices));
+
+      const res = await fetch(`/api/facilities?${params.toString()}`); // create this API
       if (!res.ok) throw new Error("Failed to fetch facilities");
       const data = await res.json();
       setFacilities(data);
@@ -53,14 +57,7 @@ export default function AdminFacilities() {
 
   useEffect(() => {
     fetchFacilities();
-  }, []);
-
-  // Filtered facilities
-  const filteredFacilities = facilities.filter((f) => {
-    const sportMatch = selectedSports.length === 0 || selectedSports.includes(f.sport);
-    const priceMatch = selectedPrices.length === 0 || selectedPrices.includes(f.price);
-    return sportMatch && priceMatch;
-  });
+  }, [selectedSports, selectedPrices]);
 
   // Handle Add Facility
   const onAddFacility = async (data) => {
@@ -128,19 +125,23 @@ export default function AdminFacilities() {
               </Button>
             </Box>
 
-            <Box className="flex flex-wrap gap-8 items-center justify-center bg-white rounded-2xl shadow-inner p-4">
-              {filteredFacilities.map((f) => (
-                <ProductCard
-                  key={f._id}
-                  id={f.id}
-                  name={f.name}
-                  price={f.price}
-                  rating={f.rating}
-                  image={f.thumbnail}
-                  href={`/admin/facilities/${f._id}`}
-                />
-              ))}
-            </Box>
+            {facilities.length === 0 ? (
+              <div className="text-center text-gray-500 font-medium py-20">No facilities available.</div>
+            ) : (
+              <Box className="flex flex-wrap gap-8 items-center justify-center bg-white rounded-2xl shadow-inner p-4">
+                {facilities.map((f) => (
+                  <ProductCard
+                    key={f._id}
+                    id={f.id}
+                    name={f.name}
+                    price={f.price}
+                    rating={f.rating}
+                    image={f.thumbnail}
+                    href={`/admin/facilities/${f._id}`}
+                  />
+                ))}
+              </Box>
+            )}
           </Box>
         </Box>
       </Box>

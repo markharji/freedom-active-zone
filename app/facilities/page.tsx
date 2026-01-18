@@ -15,13 +15,6 @@ export default function Facilities() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Filter facilities based on selected filters
-  const filteredFacilities = facilities.filter((f) => {
-    const sportMatch = selectedSports.length === 0 || selectedSports.includes(f.sport);
-    const priceMatch = selectedPrices.length === 0 || selectedPrices.includes(f.price);
-    return sportMatch && priceMatch;
-  });
-
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
@@ -29,7 +22,11 @@ export default function Facilities() {
   const fetchFacilities = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/facilities"); // create this API
+      const params = new URLSearchParams();
+      params.append("sports", JSON.stringify(selectedSports));
+      params.append("prices", JSON.stringify(selectedPrices));
+
+      const res = await fetch(`/api/facilities?${params.toString()}`); // create this API
       if (!res.ok) throw new Error("Failed to fetch facilities");
       const data = await res.json();
       setFacilities(data);
@@ -42,7 +39,7 @@ export default function Facilities() {
 
   useEffect(() => {
     fetchFacilities();
-  }, []);
+  }, [selectedSports, selectedPrices]);
 
   return (
     <>
@@ -79,19 +76,23 @@ export default function Facilities() {
 
           {/* Facilities - Right Column */}
           <div className="flex-1 bg-white rounded-2xl shadow-inner p-4">
-            <div className="flex flex-wrap gap-8 items-center justify-center">
-              {filteredFacilities.map((f) => (
-                <ProductCard
-                  key={f._id}
-                  id={f.id}
-                  name={f.name}
-                  price={f.price}
-                  rating={f.rating}
-                  image={f.thumbnail}
-                  href={`/facilities/${f._id}`}
-                />
-              ))}
-            </div>
+            {facilities.length === 0 ? (
+              <div className="text-center text-gray-500 font-medium py-20">No facilities available.</div>
+            ) : (
+              <div className="flex flex-wrap gap-8 items-center justify-center">
+                {facilities.map((f) => (
+                  <ProductCard
+                    key={f._id}
+                    id={f.id}
+                    name={f.name}
+                    price={f.price}
+                    rating={f.rating}
+                    image={f.thumbnail}
+                    href={`/facilities/${f._id}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

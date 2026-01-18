@@ -40,7 +40,11 @@ export default function AdminApparels() {
   const fetchApparels = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/apparels"); // create this API
+      const params = new URLSearchParams();
+      params.append("sports", JSON.stringify(selectedSports));
+      params.append("prices", JSON.stringify(selectedPrices));
+
+      const res = await fetch(`/api/apparels?${params.toString()}`); // create this API
       if (!res.ok) throw new Error("Failed to fetch apparels");
       const data = await res.json();
       setApparels(data);
@@ -53,14 +57,9 @@ export default function AdminApparels() {
 
   useEffect(() => {
     fetchApparels();
-  }, []);
+  }, [selectedSports, selectedPrices]);
 
   // Filtered apparels
-  const filteredApparels = apparels.filter((f) => {
-    const sportMatch = selectedSports.length === 0 || selectedSports.includes(f.sport);
-    const priceMatch = selectedPrices.length === 0 || selectedPrices.includes(f.price);
-    return sportMatch && priceMatch;
-  });
 
   // Handle Add Apparel
   const onAddApparel = async (data) => {
@@ -128,19 +127,23 @@ export default function AdminApparels() {
               </Button>
             </Box>
 
-            <Box className="flex flex-wrap gap-8 items-center justify-center bg-white rounded-2xl shadow-inner p-4">
-              {filteredApparels.map((f) => (
-                <ProductCard
-                  key={f._id}
-                  id={f.id}
-                  name={f.name}
-                  price={f.price}
-                  rating={f.rating}
-                  image={f.thumbnail}
-                  href={`/admin/apparel/${f._id}`}
-                />
-              ))}
-            </Box>
+            {apparels.length === 0 ? (
+              <div className="text-center text-gray-500 font-medium py-20">No apparels available.</div>
+            ) : (
+              <Box className="flex flex-wrap gap-8 items-center justify-center bg-white rounded-2xl shadow-inner p-4">
+                {apparels.map((f) => (
+                  <ProductCard
+                    key={f._id}
+                    id={f.id}
+                    name={f.name}
+                    price={f.price}
+                    rating={f.rating}
+                    image={f.thumbnail}
+                    href={`/admin/apparel/${f._id}`}
+                  />
+                ))}
+              </Box>
+            )}
           </Box>
         </Box>
       </Box>

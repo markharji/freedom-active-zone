@@ -7,9 +7,27 @@ import jwt from "jsonwebtoken";
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
 // GET → list all facilities
-export async function GET() {
+export async function GET(req) {
   await dbConnect();
-  const facilities = await Facility.find();
+
+  const { searchParams } = new URL(req.url);
+
+  const prices = JSON.parse(searchParams.get("prices"));
+  const sports = JSON.parse(searchParams.get("sports"));
+
+  const filter: any = {};
+
+  if (sports && sports.length > 0) {
+    filter.sport = { $in: sports }; // match any of the selected sports
+  }
+
+  if (prices && prices.length > 0) {
+    const numericPrices = prices.map((p: string) => parseInt(p));
+
+    filter.price = { $lte: Math.max(...numericPrices) };
+  }
+
+  const facilities = await Facility.find(filter);
   return NextResponse.json(facilities);
 }
 

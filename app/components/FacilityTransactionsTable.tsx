@@ -1,22 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Typography, Stack, Button, Chip, Box } from "@mui/material";
 import { customStyles } from "./ApparelTransactionsTable";
 import toast from "react-hot-toast";
+import TransactionFilter from "./TransactionFilter";
 
-interface Props {
-  data: any[];
-  fetchFacilityTransactions?: () => void; // optional callback to refresh table
-}
-
-export default function FacilityTransactionsTable({ data, fetchFacilityTransactions }: Props) {
+export default function FacilityTransactionsTable() {
   const [open, setOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [transactionToCancel, setTransactionToCancel] = useState<any>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [facilityTransactions, setFacilityTransactions] = useState([]);
+  const [search, setSearch] = useState("");
+  const [date, setDate] = useState(null);
+
+  const fetchFacilityTransactions = async () => {
+    try {
+      const params = new URLSearchParams();
+      params.append("search", search);
+      if (date) {
+        params.append("date", date?.format("DD-MM-YYYY"));
+      }
+
+      const res = await fetch(`/api/facility-transactions?${params.toString()}`);
+
+      if (!res.ok) throw new Error("Failed to fetch facility transactions");
+      const data = await res.json();
+      setFacilityTransactions(data);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+    }
+  };
+
+  useEffect(() => {
+    fetchFacilityTransactions();
+  }, [search, date]);
 
   const handleRowClick = (row: any) => {
     setSelectedTransaction(row);
@@ -101,9 +123,10 @@ export default function FacilityTransactionsTable({ data, fetchFacilityTransacti
 
   return (
     <>
+      <TransactionFilter setDate={setDate} date={date} search={search} setSearch={setSearch} />
       <DataTable
         columns={columns}
-        data={data}
+        data={facilityTransactions}
         pagination
         highlightOnHover
         striped

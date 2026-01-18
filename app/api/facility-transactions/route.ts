@@ -17,13 +17,17 @@ export async function GET(req) {
     const transactionId = searchParams.get("transactionId");
     const facilityId = searchParams.get("facilityId");
     const status = searchParams.get("status");
-    const dateStr = searchParams.get("date"); // expected "DD-MM-YYYY"
+    const dateStr = searchParams.get("date");
+    const userName = searchParams.get("search"); // expected "DD-MM-YYYY"
 
     const filter: any = {};
 
     if (transactionId) filter._id = transactionId;
     if (facilityId) filter.facility = facilityId;
     if (status) filter.status = status;
+    if (userName) {
+      filter.userName = { $regex: userName, $options: "i" };
+    }
 
     if (dateStr) {
       // Parse the string with DD-MM-YYYY format

@@ -11,6 +11,9 @@ import {
   Button,
   Stack,
   TextField,
+  RadioGroup,
+  Radio,
+  FormLabel,
 } from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
 
@@ -23,7 +26,11 @@ export default function Filters({
   setSelectedDate = () => {}, // new prop
 }) {
   const sportsOptions = ["Basketball", "Pickleball", "Tennis"];
-  const priceOptions = ["$", "$$", "$$$"];
+  const priceOptions = [
+    { label: "< 500", value: "500" },
+    { label: "< 2000", value: "2000" },
+    { label: "< 5000", value: "5000" },
+  ];
 
   const handleSportChange = (sport) => {
     if (selectedSports.includes(sport)) {
@@ -94,25 +101,31 @@ export default function Filters({
         Price
       </Typography>
       <FormGroup>
-        {priceOptions.map((price) => (
-          <FormControlLabel
-            key={price}
-            control={<Checkbox checked={selectedPrices.includes(price)} onChange={() => handlePriceChange(price)} />}
-            label={price}
-            sx={{
-              "& .MuiFormControlLabel-label": {
-                fontSize: 14,
-                fontWeight: 500,
-              },
-            }}
-          />
-        ))}
+        <RadioGroup
+          value={selectedPrices[0] || ""} // Only one selected value
+          onChange={(e) => setSelectedPrices([e.target.value])} // store as array with single value
+        >
+          {priceOptions.map((price, index) => (
+            <FormControlLabel
+              key={index}
+              value={price.value}
+              control={<Radio />}
+              label={`${price.label} PHP`}
+              sx={{
+                "& .MuiFormControlLabel-label": {
+                  fontSize: 14,
+                  fontWeight: 500,
+                },
+              }}
+            />
+          ))}
+        </RadioGroup>
       </FormGroup>
 
       <Divider sx={{ my: 3 }} />
 
       {/* Date */}
-      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+      {/* <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
         Date
       </Typography>
       <TextField
@@ -124,7 +137,7 @@ export default function Filters({
         InputLabelProps={{
           shrink: true,
         }}
-      />
+      /> */}
 
       {/* Optional: Add a subtle message */}
       <Typography variant="body2" color="text.secondary" sx={{ mt: 3, fontStyle: "italic" }}>
