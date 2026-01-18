@@ -6,12 +6,6 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
-export const config = {
-  api: {
-    bodyParser: false, // Important: disable Next.js default body parser
-  },
-};
-
 // GET → get a single facility by ID
 export async function GET(req, { params }) {
   await dbConnect();

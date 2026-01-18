@@ -8,7 +8,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 
 dayjs.extend(customParseFormat);
 
-export async function GET(req) {
+export async function GET(req: any) {
   await dbConnect();
 
   try {
