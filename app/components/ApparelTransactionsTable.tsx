@@ -23,7 +23,7 @@ export const customStyles = {
 
 interface Props {
   data: any[];
-  onTransactionUpdated?: () => void; // optional callback to refresh table
+  fetchApparelTransactions?: () => void; // optional callback to refresh table
 }
 
 export default function ApparelTransactionsTable({ data, fetchApparelTransactions }: Props) {

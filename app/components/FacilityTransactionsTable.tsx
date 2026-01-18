@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 
 interface Props {
   data: any[];
-  onTransactionUpdated?: () => void; // optional callback to refresh table
+  fetchFacilityTransactions?: () => void; // optional callback to refresh table
 }
 
 export default function FacilityTransactionsTable({ data, fetchFacilityTransactions }: Props) {
