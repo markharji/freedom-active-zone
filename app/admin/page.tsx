@@ -40,7 +40,6 @@ export default function Admin() {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
 
-        toast.success("Logged in successfully");
         router.push("/admin/facilities");
       }
     } catch (error) {
