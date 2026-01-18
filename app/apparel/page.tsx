@@ -89,7 +89,7 @@ export default function Apparel() {
                     price={f.price}
                     rating={f.rating}
                     image={f.thumbnail}
-                    href={`/apparels/${f._id}`}
+                    href={`/apparel/${f._id}`}
                   />
                 ))}
               </div>
