@@ -8,6 +8,7 @@ const FacilitySchema = new mongoose.Schema(
     price: { type: Number, required: true },
     thumbnail: { type: String },
     rating: { type: Number, default: 0 },
+    images: [{ type: String }],
   },
   { timestamps: true },
 );

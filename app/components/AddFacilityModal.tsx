@@ -1,7 +1,17 @@
+"use client";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Modal, Box, Typography, TextField, Button, MenuItem, Paper, IconButton } from "@mui/material";
-import { useDropzone } from "react-dropzone";
+import {
+  Modal,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  MenuItem,
+  IconButton,
+  Paper,
+  CircularProgress,
+} from "@mui/material";
 import toast from "react-hot-toast";
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -19,31 +29,54 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
       sport: null,
       price: "",
       description: "",
-      image: null,
+      images: [],
     },
   });
 
-  const [preview, setPreview] = useState(null);
+  const [previews, setPreviews] = useState([]);
+  const [loading, setLoading] = useState([]);
 
-  // Dropzone setup
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: { "image/*": [] },
-    maxFiles: 1,
-    onDrop: (acceptedFiles) => {
-      const file = acceptedFiles[0];
-      setValue("image", file, { shouldValidate: true });
-      setPreview(URL.createObjectURL(file));
-    },
-  });
+  const watchImages = watch("images");
 
-  const watchImage = watch("image");
+  // Handle multiple file selection
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    const currentImages = watchImages || [];
+    const updatedImages = [...currentImages, ...files];
+
+    setValue("images", updatedImages, { shouldValidate: true });
+
+    const urls = updatedImages.map((file) => URL.createObjectURL(file));
+    setPreviews(urls);
+  };
+
+  // Delete a selected image
+  const handleRemoveImage = (index) => {
+    const currentImages = watchImages || [];
+    const updatedImages = currentImages.filter((_, i) => i !== index);
+
+    setValue("images", updatedImages, { shouldValidate: true });
+
+    const updatedPreviews = previews.filter((_, i) => i !== index);
+    setPreviews(updatedPreviews);
+  };
 
   const submitHandler = async (data) => {
     try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("sport", data.sport);
+      formData.append("price", data.price);
+      formData.append("description", data.description);
+
+      console.log(data);
+
+      data.images.forEach((file) => formData.append("images", file));
+
       const res = await fetch("/api/facilities", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: formData,
       });
 
       const result = await res.json();
@@ -51,9 +84,12 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
 
       toast.success("Facility added successfully!");
       reset();
-      fetchFacilities(); // refresh list
-      onClose(); // close modal after submit
+      setPreviews([]);
+      fetchFacilities();
+      onClose();
+      setLoading(false);
     } catch (err) {
+      setLoading(false);
       toast.error(err.message);
     }
   };
@@ -66,7 +102,9 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
           top: "50%",
           left: "50%",
           transform: "translate(-50%, -50%)",
-          width: 380,
+          width: 450,
+          maxHeight: "90vh",
+          overflowY: "auto",
           bgcolor: "background.paper",
           borderRadius: 2,
           boxShadow: 24,
@@ -91,7 +129,7 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
             error={!!errors.name}
             helperText={errors.name?.message}
           />
-          {/* Sport Dropdown */}
+
           <TextField
             select
             fullWidth
@@ -104,6 +142,7 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
             <MenuItem value="Basketball">Basketball</MenuItem>
             <MenuItem value="Pickleball">Pickleball</MenuItem>
           </TextField>
+
           <TextField
             fullWidth
             label="Price"
@@ -113,11 +152,65 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
             error={!!errors.price}
             helperText={errors.price?.message}
           />
-          {/* Description */}
+
           <TextField fullWidth label="Description" margin="normal" multiline rows={3} {...register("description")} />
 
-          <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-            Add
+          {/* Multiple Image Upload */}
+          <Button variant="contained" component="label" fullWidth sx={{ mt: 2 }}>
+            Upload Images
+            <input type="file" accept="image/*" multiple onChange={handleFileChange} />
+          </Button>
+
+          {/* Horizontally scrollable previews */}
+          {/* {previews.length > 0 && (
+            <Box
+              sx={{
+                display: "flex",
+                overflowX: "auto",
+                mt: 2,
+                gap: 1,
+                py: 1,
+              }}
+            >
+              {previews.map((src, idx) => (
+                <Box key={idx} sx={{ position: "relative", minWidth: 100, minHeight: 100 }}>
+                  <Paper
+                    sx={{
+                      width: 100,
+                      height: 100,
+                      backgroundImage: `url(${src})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      borderRadius: 1,
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={() => handleRemoveImage(idx)}
+                    sx={{
+                      position: "absolute",
+                      top: -8,
+                      right: -8,
+                      bgcolor: "rgba(0,0,0,0.7)",
+                      color: "#fff",
+                      "&:hover": { bgcolor: "rgba(0,0,0,0.9)" },
+                    }}
+                  >
+                    ✕
+                  </IconButton>
+                </Box>
+              ))}
+            </Box>
+          )} */}
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{ mt: 3 }}
+            disabled={loading} // disable button when loading is true
+          >
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Add"}
           </Button>
         </Box>
       </Box>

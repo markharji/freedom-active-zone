@@ -87,7 +87,7 @@ export default function Facilities() {
                     name={f.name}
                     price={f.price}
                     rating={f.rating}
-                    image={f.thumbnail}
+                    image={f.thumbnail || f.images[0]}
                     href={`/facilities/${f._id}`}
                   />
                 ))}
