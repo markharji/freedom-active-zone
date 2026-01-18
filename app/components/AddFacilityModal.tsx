@@ -34,7 +34,7 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
   });
 
   const [previews, setPreviews] = useState([]);
-  const [loading, setLoading] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const watchImages = watch("images");
 
