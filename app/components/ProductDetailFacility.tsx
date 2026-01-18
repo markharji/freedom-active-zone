@@ -2,20 +2,33 @@
 
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { TextField, Button, FormControl, InputLabel, Select, FormHelperText, MenuItem, Box } from "@mui/material";
-import { LocalizationProvider, DatePicker, TimePicker } from "@mui/x-date-pickers";
+import {
+  TextField,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  FormHelperText,
+  MenuItem,
+  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Typography,
+  CircularProgress,
+} from "@mui/material";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import toast from "react-hot-toast";
 
 // Swiper imports
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/thumbs";
-import { Navigation } from "swiper/modules";
-import { Thumbs } from "swiper/modules";
-import toast from "react-hot-toast";
-import Facility from "@/models/Facility";
+import { Navigation, Thumbs } from "swiper/modules";
 
 export default function ProductDetail({ product }) {
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
@@ -26,6 +39,11 @@ export default function ProductDetail({ product }) {
 
   const [suggestedSlots, setSuggestedSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+
+  const [openConfirm, setOpenConfirm] = useState(false);
+  const [referenceId, setReferenceId] = useState("");
+
+  const [loading, setLoading] = useState(false);
 
   const {
     handleSubmit,
@@ -39,12 +57,25 @@ export default function ProductDetail({ product }) {
       email: "",
       contact: "",
       date: null,
-      time: null,
+      startTime: "",
+      endTime: "",
     },
   });
 
-  const selectedDate = watch("date"); // watch the date field
+  const selectedDate = watch("date");
+  const startTime = watch("startTime");
+  const hours = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, "0")}:00`);
 
+  const totalHours =
+    startTime && watch("endTime") ? parseInt(watch("endTime").split(":")[0]) - parseInt(startTime.split(":")[0]) : 0;
+
+  const totalPrice = totalHours * product.price;
+
+  useEffect(() => {
+    setValue("endTime", "");
+  }, [startTime, setValue]);
+
+  // Fetch transactions for the selected date
   useEffect(() => {
     const fetchTransactions = async () => {
       setTransactions([]);
@@ -52,65 +83,41 @@ export default function ProductDetail({ product }) {
       setValue("endTime", "");
       if (!selectedDate) return;
 
-      setLoadingTransactions(true); // start loading
-
+      setLoadingTransactions(true);
       try {
         const dateString = selectedDate.format("DD-MM-YYYY");
-
         const res = await fetch(
           `/api/facility-transactions?facilityId=${product._id}&date=${dateString}&status=pending`,
         );
         const data = await res.json();
 
         if (!res.ok) throw new Error(data.message || "Failed to fetch transactions");
-
         setTransactions(data);
       } catch (err) {
         toast.error(err.message || "Failed to fetch transactions");
       } finally {
-        setLoadingTransactions(false); // done loading
+        setLoadingTransactions(false);
       }
     };
 
     fetchTransactions();
-  }, [selectedDate]);
+  }, [selectedDate, product._id, setValue]);
 
-  const startTime = watch("startTime"); // watch the start time
-
-  const totalHours =
-    startTime && watch("endTime") ? parseInt(watch("endTime").split(":")[0]) - parseInt(startTime.split(":")[0]) : 0;
-
-  const totalPrice = totalHours * product.price;
-
-  const hours = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, "0")}:00`);
-
-  useEffect(() => {
-    setValue("endTime", "");
-  }, [startTime, setValue]);
-
-  const isTimeOverlap = (start: string, end: string) => {
-    return transactions.some((t) => {
-      return start < t.endTime && end > t.startTime;
-    });
+  const isTimeOverlap = (start, end) => {
+    return transactions.some((t) => start < t.endTime && end > t.startTime);
   };
 
-  const isStartTimeDisabled = (hour: string) => {
-    // Try assuming 1-hour slot
+  const isStartTimeDisabled = (hour) => {
     const proposedStart = hour;
-    const proposedEnd = hours[hours.indexOf(hour) + 1] || "24:00"; // next hour
-
+    const proposedEnd = hours[hours.indexOf(hour) + 1] || "24:00";
     return isTimeOverlap(proposedStart, proposedEnd);
   };
 
-  const isEndTimeDisabled = (hour: string) => {
+  const isEndTimeDisabled = (hour) => {
     if (!startTime) return false;
-
     const proposedStart = startTime;
     const proposedEnd = hour;
-
-    // End time must be after startTime
     if (proposedEnd <= proposedStart) return true;
-
     return isTimeOverlap(proposedStart, proposedEnd);
   };
 
@@ -140,8 +147,7 @@ export default function ProductDetail({ product }) {
 
   const onSubmit = async (data) => {
     try {
-      // const totalHours = +data.endTime.split(":")[0] - +data.startTime.split(":")[0];
-
+      setLoading(true);
       const payload = {
         ...data,
         date: data.date.format("DD-MM-YYYY"),
@@ -149,8 +155,6 @@ export default function ProductDetail({ product }) {
         facilityId: product._id,
         price: totalPrice,
       };
-
-      console.log("Payload", payload);
 
       const res = await fetch("/api/facility-transactions", {
         method: "POST",
@@ -162,15 +166,23 @@ export default function ProductDetail({ product }) {
 
       if (!res.ok) throw new Error(result.message || "Failed to book facility");
 
-      toast.success("Booking submitted successfully!");
+      // Open confirmation modal
+      setReferenceId(result.transaction._id || "N/A");
+      setOpenConfirm(true);
+
+      setLoading(false);
+
+      // Auto-close after 5 seconds
+      setTimeout(() => setOpenConfirm(false), 5000);
     } catch (err) {
+      setLoading(false);
       toast.error(err.message || "Booking failed");
     }
   };
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 grid md:grid-cols-2 gap-8 shadow-md bg-white">
-      {/* Left: Swiper Images */}
+      {/* Left: Swiper */}
       <div>
         <Swiper
           spaceBetween={10}
@@ -212,15 +224,15 @@ export default function ProductDetail({ product }) {
         </Swiper>
       </div>
 
-      {/* Right: Info & Booking Form */}
+      {/* Right: Booking Form */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold mb-2">{product.name}</h1>
-        {/* Product Description */}
+
         <div className="mb-4">
           <p className={`text-gray-700 text-sm md:text-base ${!showFullDesc ? "line-clamp-3" : ""}`}>
             {product.description}
           </p>
-          {product.description.split(" ").length > 20 && ( // Show button only if description is long
+          {product.description.split(" ").length > 20 && (
             <button
               type="button"
               onClick={() => setShowFullDesc(!showFullDesc)}
@@ -231,25 +243,10 @@ export default function ProductDetail({ product }) {
           )}
         </div>
 
-        {/* Rating */}
-        <div className="flex items-center mb-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <svg
-              key={i}
-              className={`h-5 w-5 ${i < Math.floor(product.rating) ? "text-yellow-400" : "text-gray-300"}`}
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.165c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.286 3.957c.3.921-.755 1.688-1.54 1.118l-3.37-2.448a1 1 0 00-1.176 0l-3.37 2.448c-.784.57-1.838-.197-1.539-1.118l1.285-3.957a1 1 0 00-.364-1.118L2.04 9.385c-.783-.57-.38-1.81.588-1.81h4.165a1 1 0 00.951-.69l1.285-3.958z" />
-            </svg>
-          ))}
-          <span className="ml-2 text-gray-600">{product.rating.toFixed(1)}</span>
-        </div>
-
         <p className="text-green-900 text-2xl font-bold mb-4">₱{product.price}</p>
 
-        {/* Booking Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 mb-4 w-fit md:w-full">
+          {/* Name */}
           <Controller
             name="name"
             control={control}
@@ -258,56 +255,40 @@ export default function ProductDetail({ product }) {
               <TextField
                 {...field}
                 label="Customer Name"
-                variant="outlined"
                 error={!!errors.name}
                 helperText={errors.name?.message}
-                required
                 fullWidth
               />
             )}
           />
 
+          {/* Email */}
           <Controller
             name="email"
             control={control}
             rules={{
               required: "Email is required",
-              pattern: {
-                value: /^\S+@\S+\.\S+$/,
-                message: "Invalid email format",
-              },
+              pattern: { value: /^\S+@\S+\.\S+$/, message: "Invalid email format" },
             }}
             render={({ field }) => (
-              <TextField
-                {...field}
-                label="Email"
-                variant="outlined"
-                error={!!errors.email}
-                helperText={errors.email?.message}
-                required
-                fullWidth
-              />
+              <TextField {...field} label="Email" error={!!errors.email} helperText={errors.email?.message} fullWidth />
             )}
           />
 
+          {/* Contact */}
           <Controller
             name="contact"
             control={control}
             rules={{
               required: "Contact number is required",
-              pattern: {
-                value: /^[0-9]{10,15}$/,
-                message: "Invalid contact number",
-              },
+              pattern: { value: /^[0-9]{10,15}$/, message: "Invalid contact number" },
             }}
             render={({ field }) => (
               <TextField
                 {...field}
                 label="Contact Number"
-                variant="outlined"
                 error={!!errors.contact}
                 helperText={errors.contact?.message}
-                required
                 fullWidth
               />
             )}
@@ -325,18 +306,13 @@ export default function ProductDetail({ product }) {
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) => field.onChange(date)}
                   slotProps={{
-                    textField: {
-                      error: !!errors.date,
-                      helperText: errors.date?.message,
-                      required: true,
-                      fullWidth: true,
-                    },
+                    textField: { error: !!errors.date, helperText: errors.date?.message, fullWidth: true },
                   }}
                 />
               )}
             />
 
-            <Box className="flex flex-col md:flex-row gap-2 md:gap-4">
+            <Box className="flex flex-col md:flex-row gap-2 md:gap-4 mt-2">
               {/* Start Time */}
               <Controller
                 name="startTime"
@@ -346,12 +322,10 @@ export default function ProductDetail({ product }) {
                   <FormControl fullWidth error={!!errors.startTime}>
                     <InputLabel id="start-time-label">Start Time</InputLabel>
                     <Select
-                      labelId="start-time-label"
                       {...field}
                       value={field.value || ""}
                       label="Start Time"
                       onChange={(e) => field.onChange(e.target.value)}
-                      disabled={loadingTransactions}
                     >
                       {hours.map((hour) => (
                         <MenuItem key={hour} value={hour} disabled={isStartTimeDisabled(hour)}>
@@ -376,12 +350,10 @@ export default function ProductDetail({ product }) {
                   <FormControl fullWidth error={!!errors.endTime}>
                     <InputLabel id="end-time-label">End Time</InputLabel>
                     <Select
-                      labelId="end-time-label"
                       {...field}
                       value={field.value || ""}
                       label="End Time"
                       onChange={(e) => field.onChange(e.target.value)}
-                      disabled={loadingTransactions || !startTime}
                     >
                       {hours.map((hour) => (
                         <MenuItem
@@ -405,20 +377,20 @@ export default function ProductDetail({ product }) {
               Total ({totalHours} {totalHours === 1 ? "hour" : "hours"}): ₱{totalPrice}
             </p>
           )}
+
           <Button
             type="submit"
             variant="contained"
-            color="primary"
             fullWidth
-            className="bg-green-900 hover:bg-pink-600"
+            sx={{ mt: 3 }}
+            disabled={loading} // disable button when loading is true
           >
-            Book Now
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Book Now"}
           </Button>
 
           <Button
             type="button"
             variant="outlined"
-            color="secondary"
             fullWidth
             onClick={handleSuggestSlots}
             className="mt-2"
@@ -427,7 +399,7 @@ export default function ProductDetail({ product }) {
             {loadingSlots ? "Checking..." : "View Available Slots"}
           </Button>
 
-          {/* Display suggested slots */}
+          {/* Suggested Slots */}
           {suggestedSlots.length > 0 && (
             <Box className="mt-4 p-4 border border-gray-300 rounded-md bg-gray-50">
               <h3 className="text-lg font-semibold mb-2">Available Slots:</h3>
@@ -440,11 +412,29 @@ export default function ProductDetail({ product }) {
               </ul>
             </Box>
           )}
-
-          {!loadingSlots && suggestedSlots.length === 0 && selectedDate && (
-            <p className="mt-4 text-gray-500">No available slots for the selected date.</p>
-          )}
         </form>
+
+        {/* Confirmation Modal */}
+        <Dialog open={openConfirm} onClose={() => setOpenConfirm(false)}>
+          <DialogTitle>Booking Confirmed!</DialogTitle>
+          <DialogContent dividers>
+            <Typography gutterBottom>Your booking has been successfully submitted.</Typography>
+            <Typography gutterBottom>
+              Reference Number: <strong>{referenceId}</strong>
+            </Typography>
+            <Button variant="outlined" onClick={() => navigator.clipboard.writeText(referenceId)} className="mt-2">
+              Copy Reference
+            </Button>
+            <Typography variant="body2" color="textSecondary" className="mt-2">
+              Please take a screenshot or note this reference number for your records.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenConfirm(false)} color="primary">
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
     </div>
   );
