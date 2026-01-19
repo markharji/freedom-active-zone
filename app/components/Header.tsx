@@ -1,13 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Header({ fromAdmin = false }) {
   const [isOpen, setIsOpen] = useState(false);
-
+  const [isLoggedStore, setIsLoggedStore] = useState(false);
   // Helper to prepend /admin if needed
   const route = (path) => (fromAdmin ? `/admin${path}` : path);
+
+  const { user, loading, isLoggedIn, logout } = useAuth();
+
+  useEffect(() => {
+    const stored = localStorage.getItem("isLogged") === "true";
+    setIsLoggedStore(stored);
+  }, []);
 
   return (
     <header className="sticky top-0 left-0 w-full bg-gray-900 bg-opacity-95 text-white shadow-md z-50">
@@ -25,6 +33,11 @@ export default function Header({ fromAdmin = false }) {
           <Link href={route("/apparel")} className="hover:text-orange-400 transition-colors">
             Apparel
           </Link>
+          {fromAdmin && (isLoggedIn || isLoggedStore) && (
+            <button onClick={logout} className="hover:text-orange-400 transition-colors">
+              Logout
+            </button>
+          )}
         </nav>
 
         {/* Mobile Menu Button */}
@@ -55,6 +68,11 @@ export default function Header({ fromAdmin = false }) {
           <Link href={route("/apparel")} className="block py-2 font-semibold hover:text-orange-400 transition-colors">
             Apparel
           </Link>
+          {fromAdmin && (isLoggedIn || isLoggedStore) && (
+            <button onClick={logout} className="hover:text-orange-400 transition-colors">
+              Logout
+            </button>
+          )}
         </nav>
       )}
     </header>

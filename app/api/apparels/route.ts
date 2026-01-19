@@ -47,13 +47,18 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const prices = JSON.parse(searchParams.get("prices") || "[]");
   const sports = JSON.parse(searchParams.get("sports") || "[]");
-
+  const limitParam = searchParams.get("limit");
+  const limit = limitParam ? parseInt(limitParam) : null;
   const filter: any = {};
 
   if (sports.length > 0) filter.sport = { $in: sports };
   if (prices.length > 0) filter.price = { $lte: Math.max(...prices.map((p: string) => parseInt(p))) };
 
-  const apparels = await Apparel.find(filter);
+  let query = Apparel.find(filter);
+  if (limit) query = query.limit(limit);
+
+  const apparels = await query;
+
   return NextResponse.json(apparels);
 }
 

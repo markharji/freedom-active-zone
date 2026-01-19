@@ -2,7 +2,18 @@
 
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { TextField, Button, Box, Typography, MenuItem, FormControl, InputLabel, Select, Paper } from "@mui/material";
+import {
+  TextField,
+  Button,
+  Box,
+  Typography,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  Paper,
+  CircularProgress,
+} from "@mui/material";
 import toast from "react-hot-toast";
 
 // Swiper for images
@@ -18,6 +29,7 @@ import { useDropzone } from "react-dropzone";
 export default function ProductDetailAdmin({ product }) {
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
   const [previewImages, setPreviewImages] = useState(product.images || []);
+  const [loading, setLoading] = useState(false);
 
   const {
     handleSubmit,
@@ -49,8 +61,7 @@ export default function ProductDetailAdmin({ product }) {
   // PUT request to update apparel
   const onUpdate = async (data) => {
     try {
-      console.log(data);
-
+      setLoading(true);
       delete data.images;
       const res = await fetch(`/api/apparels/${product._id}`, {
         method: "PUT",
@@ -63,7 +74,9 @@ export default function ProductDetailAdmin({ product }) {
       if (!res.ok) throw new Error(result.message || "Failed to update apparel");
 
       toast.success("Apparel updated successfully!");
+      setLoading(false);
     } catch (err) {
+      setLoading(false);
       toast.error(err.message || "Update failed");
     }
   };
@@ -73,7 +86,7 @@ export default function ProductDetailAdmin({ product }) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 grid md:grid-cols-2 gap-8 shadow-md bg-white rounded-lg">
+    <div className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 gap-8 shadow-md bg-white rounded-lg">
       {/* Left: Swiper Images */}
       <div>
         <Swiper
@@ -200,7 +213,7 @@ export default function ProductDetailAdmin({ product }) {
           />
 
           <Button type="submit" variant="contained" color="primary">
-            Update Apparel
+            {loading ? <CircularProgress /> : "Update Apparel"}
           </Button>
         </form>
       </div>

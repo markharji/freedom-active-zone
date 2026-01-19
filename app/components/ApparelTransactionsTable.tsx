@@ -5,6 +5,7 @@ import DataTable from "react-data-table-component";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Typography, Stack, Button, Chip, Box } from "@mui/material";
 import toast from "react-hot-toast";
 import TransactionFilter from "./TransactionFilter";
+import Loader from "./Loader";
 
 export const customStyles = {
   header: {
@@ -30,11 +31,13 @@ export default function ApparelTransactionsTable() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [date, setDate] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const [apparelTransactions, setApparelTransactions] = useState([]);
 
   const fetchApparelTransactions = async () => {
     try {
+      setLoading(true);
       const params = new URLSearchParams();
       params.append("search", search);
       if (date) {
@@ -46,7 +49,9 @@ export default function ApparelTransactionsTable() {
       if (!res.ok) throw new Error("Failed to fetch apparel transactions");
       const data = await res.json();
       setApparelTransactions(data);
+      setLoading(false);
     } catch (err) {
+      setLoading(false);
       toast.error(err.message);
     } finally {
     }
@@ -148,6 +153,8 @@ export default function ApparelTransactionsTable() {
         striped
         customStyles={customStyles}
         onRowClicked={handleRowClick}
+        progressPending={loading}
+        progressComponent={<Loader />}
       />
 
       {/* Transaction Details Modal */}

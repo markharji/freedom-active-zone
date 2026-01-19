@@ -7,13 +7,14 @@ import Filters from "../components/Filters";
 import { Drawer, IconButton, Button } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import toast from "react-hot-toast";
+import Loader from "../components/Loader";
 
 export default function Facilities() {
   const [selectedSports, setSelectedSports] = useState([]);
   const [selectedPrices, setSelectedPrices] = useState([]);
   const [facilities, setFacilities] = useState([]);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -76,7 +77,9 @@ export default function Facilities() {
 
           {/* Facilities - Right Column */}
           <div className="flex-1 bg-white rounded-2xl shadow-inner p-4">
-            {facilities.length === 0 ? (
+            {loading ? (
+              <Loader />
+            ) : facilities.length === 0 ? (
               <div className="text-center text-gray-500 font-medium py-20">No facilities available.</div>
             ) : (
               <div className="flex flex-wrap gap-8 items-center justify-center">

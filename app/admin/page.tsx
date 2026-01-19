@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Box, Paper, TextField, Button, Typography, Link, Alert, Stack } from "@mui/material";
+import { Box, Paper, TextField, Button, Typography, Link, Alert, Stack, CircularProgress } from "@mui/material";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 const ADMIN_REGISTER_PASSWORD = "admin123";
 
@@ -16,7 +17,7 @@ export default function Admin() {
   const [adminVerified, setAdminVerified] = useState(false);
   const [adminPassInput, setAdminPassInput] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const { refreshAuth } = useAuth();
   const loginForm = useForm({
     defaultValues: { username: "", password: "" },
   });
@@ -34,14 +35,18 @@ export default function Admin() {
     const { username, password } = data;
 
     try {
+      setLoading(true);
       const response = await axios.post("/api/login", { username, password });
 
       if (response.status === 200) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+        toast.success("Logged in successfully");
+        localStorage.setItem("isLogged", true);
+        router.push("/admin/home");
+        router.refresh();
       }
-      router.push("/admin/home");
+      setLoading(false);
     } catch (error) {
+      setLoading(false);
       toast.error(error.response?.data?.message || "Login failed");
     }
   };
@@ -123,7 +128,7 @@ export default function Admin() {
             />
 
             <Button fullWidth type="submit" variant="contained" sx={{ mt: 3 }}>
-              Login
+              {loading ? <CircularProgress size={24} color="inherit" /> : "Login"}
             </Button>
 
             <Button

@@ -16,11 +16,18 @@ import {
   DialogContent,
   DialogActions,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import toast from "react-hot-toast";
+import InfoIcon from "@mui/icons-material/Info";
+import EmailIcon from "@mui/icons-material/Email";
+import PhoneIcon from "@mui/icons-material/Phone";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 
 // Swiper imports
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -39,8 +46,13 @@ export default function ProductDetail({ product }) {
   const [suggestedSlots, setSuggestedSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
+  const [loading, setLoading] = useState(false);
   const [openConfirm, setOpenConfirm] = useState(false);
   const [referenceId, setReferenceId] = useState("");
+
+  // Preview modal state
+  const [openPreview, setOpenPreview] = useState(false);
+  const [formDataPreview, setFormDataPreview] = useState(null);
 
   const {
     handleSubmit,
@@ -143,8 +155,15 @@ export default function ProductDetail({ product }) {
     }
   };
 
+  // Pre-submit: show preview modal
+  const handlePreview = (data) => {
+    setFormDataPreview(data);
+    setOpenPreview(true);
+  };
+
   const onSubmit = async (data) => {
     try {
+      setLoading(true);
       const payload = {
         ...data,
         date: data.date.format("DD-MM-YYYY"),
@@ -166,13 +185,15 @@ export default function ProductDetail({ product }) {
       // Show confirmation modal
       setReferenceId(result.transaction._id || "N/A");
       setOpenConfirm(true);
+      setLoading(false);
     } catch (err) {
       toast.error(err.message || "Booking failed");
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 grid md:grid-cols-2 gap-8 shadow-md bg-white">
+    <div className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 gap-8 shadow-md bg-white">
       {/* Left: Swiper Images */}
       <div>
         <Swiper
@@ -216,7 +237,7 @@ export default function ProductDetail({ product }) {
       </div>
 
       {/* Right: Info & Booking Form */}
-      <div>
+      <div className="w-full">
         <h1 className="text-2xl md:text-3xl font-bold mb-2">{product.name}</h1>
 
         <div className="mb-4">
@@ -236,7 +257,8 @@ export default function ProductDetail({ product }) {
 
         <p className="text-green-900 text-2xl font-bold mb-4">₱{product.price}</p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 mb-4 w-fit md:w-full">
+        {/* Booking Form */}
+        <form onSubmit={handleSubmit(handlePreview)} className="flex flex-col gap-4 mb-4 w-full md:w-full">
           {/* Name */}
           <Controller
             name="name"
@@ -297,7 +319,7 @@ export default function ProductDetail({ product }) {
             )}
           />
 
-          {/* Date */}
+          {/* Date & Time */}
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Controller
               name="date"
@@ -392,6 +414,7 @@ export default function ProductDetail({ product }) {
             </p>
           )}
 
+          {/* Buttons */}
           <Button
             type="submit"
             variant="contained"
@@ -399,7 +422,7 @@ export default function ProductDetail({ product }) {
             fullWidth
             className="bg-green-900 hover:bg-pink-600"
           >
-            Book Now
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Book Now"}
           </Button>
 
           <Button
@@ -414,7 +437,7 @@ export default function ProductDetail({ product }) {
             {loadingSlots ? "Checking..." : "View Available Slots"}
           </Button>
 
-          {/* Display suggested slots */}
+          {/* Suggested Slots */}
           {suggestedSlots.length > 0 && (
             <Box className="mt-4 p-4 border border-gray-300 rounded-md bg-gray-50">
               <h3 className="text-lg font-semibold mb-2">Available Slots:</h3>
@@ -433,20 +456,178 @@ export default function ProductDetail({ product }) {
           )}
         </form>
 
-        {/* Confirmation Modal */}
-        <Dialog open={openConfirm} onClose={() => setOpenConfirm(false)}>
-          <DialogTitle>Booking Confirmed!</DialogTitle>
-          <DialogContent dividers>
-            <Typography gutterBottom>Your booking has been successfully submitted.</Typography>
-            <Typography gutterBottom>
-              Reference Number: <strong>{referenceId}</strong>
+        {/* Preview Modal */}
+        <Dialog
+          open={openPreview}
+          onClose={() => setOpenPreview(false)}
+          PaperProps={{
+            sx: {
+              borderRadius: 3,
+              minWidth: 340,
+              maxWidth: 500,
+              bgcolor: "#f9f9f9",
+              boxShadow: 8,
+              px: 0,
+              py: 0,
+            },
+          }}
+        >
+          {/* Header */}
+          <Box sx={{ bgcolor: "#1f7a49", color: "white", py: 2, px: 3, borderRadius: "8px 8px 0 0" }}>
+            <Typography variant="h6" fontWeight="bold">
+              Confirm Your Booking
             </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              Please review your booking details
+            </Typography>
+          </Box>
+
+          {/* Content */}
+          <DialogContent dividers sx={{ px: 3, py: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <InfoIcon sx={{ mr: 1, color: "#1f7a49" }} />
+              <Typography>
+                <strong>Name:</strong> {formDataPreview?.name}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <EmailIcon sx={{ mr: 1, color: "#1f7a49" }} />
+              <Typography>
+                <strong>Email:</strong> {formDataPreview?.email}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <PhoneIcon sx={{ mr: 1, color: "#1f7a49" }} />
+              <Typography>
+                <strong>Contact:</strong> {formDataPreview?.contact}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <CalendarTodayIcon sx={{ mr: 1, color: "#1f7a49" }} />
+              <Typography>
+                <strong>Date:</strong> {formDataPreview?.date?.format("DD-MM-YYYY")}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <AccessTimeIcon sx={{ mr: 1, color: "#1f7a49" }} />
+              <Typography>
+                <strong>Time:</strong> {formDataPreview?.startTime} - {formDataPreview?.endTime}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <AttachMoneyIcon sx={{ mr: 1, color: "#1f7a49" }} />
+              <Typography>
+                <strong>Total Price:</strong> ₱{totalHours * product.price}
+              </Typography>
+            </Box>
+          </DialogContent>
+
+          {/* Actions */}
+          <DialogActions sx={{ px: 3, py: 2, justifyContent: "space-between" }}>
+            <Button
+              onClick={() => setOpenPreview(false)}
+              variant="outlined"
+              sx={{
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: "bold",
+                color: "#1f7a49",
+                borderColor: "#1f7a49",
+                "&:hover": { borderColor: "#14532d", color: "#14532d" },
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              onClick={async () => {
+                setOpenPreview(false);
+                await onSubmit(formDataPreview);
+              }}
+              variant="contained"
+              sx={{
+                bgcolor: "#1f7a49",
+                color: "white",
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: "bold",
+                "&:hover": { bgcolor: "#14532d" },
+              }}
+            >
+              Confirm Booking
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Confirmation Modal */}
+        <Dialog
+          open={openConfirm}
+          onClose={() => setOpenConfirm(false)}
+          PaperProps={{ sx: { borderRadius: 3, minWidth: 340, maxWidth: 500, bgcolor: "#f9f9f9", boxShadow: 8 } }}
+        >
+          <Box sx={{ bgcolor: "#1f7a49", color: "white", py: 2, px: 3, borderRadius: "8px 8px 0 0" }}>
+            <Typography variant="h6" fontWeight="bold">
+              Booking Confirmed!
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              Your booking has been successfully submitted.
+            </Typography>
+          </Box>
+          <DialogContent dividers sx={{ px: 3, py: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                bgcolor: "#e6f4ea",
+                px: 2,
+                py: 1.5,
+                borderRadius: 2,
+                border: "1px solid #c1e1c1",
+                mb: 2,
+                flexDirection: "column",
+              }}
+            >
+              <Typography sx={{ fontWeight: "bold", color: "#1f7a49" }}>{referenceId}</Typography>
+              <Button
+                onClick={() => navigator.clipboard.writeText(referenceId)}
+                variant="contained"
+                sx={{
+                  bgcolor: "#1f7a49",
+                  color: "white",
+                  "&:hover": { bgcolor: "#14532d" },
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontSize: "0.875rem",
+                }}
+              >
+                Copy
+              </Button>
+            </Box>
             <Typography variant="body2" color="textSecondary">
               Please take a screenshot or note this reference number for your records.
             </Typography>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenConfirm(false)} color="primary">
+          <DialogActions sx={{ px: 3, py: 2, justifyContent: "center" }}>
+            <Button
+              onClick={() => setOpenConfirm(false)}
+              variant="contained"
+              sx={{
+                bgcolor: "#1f7a49",
+                color: "white",
+                borderRadius: 2,
+                "&:hover": { bgcolor: "#14532d" },
+                px: 4,
+                py: 1.5,
+                textTransform: "none",
+                fontWeight: "bold",
+              }}
+            >
               Close
             </Button>
           </DialogActions>

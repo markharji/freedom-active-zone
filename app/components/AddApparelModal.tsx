@@ -158,11 +158,11 @@ export default function AddApparelModal({ open, onClose, fetchApparels, title = 
           {/* Upload Images */}
           <Button variant="contained" component="label" fullWidth sx={{ mt: 2 }}>
             Upload Images
-            <input type="file" accept="image/*" multiple onChange={handleFileChange} hidden />
+            <input type="file" accept="image/*" multiple onChange={handleFileChange} />
           </Button>
 
           {/* Image Previews */}
-          {previews.length > 0 && (
+          {/* {previews.length > 0 && (
             <Box sx={{ display: "flex", gap: 1, overflowX: "auto", mt: 2 }}>
               {previews.map((src, idx) => (
                 <Box key={idx} sx={{ position: "relative" }}>
@@ -193,7 +193,7 @@ export default function AddApparelModal({ open, onClose, fetchApparels, title = 
                 </Box>
               ))}
             </Box>
-          )}
+          )} */}
 
           <Button type="submit" variant="contained" fullWidth sx={{ mt: 3 }} disabled={loading}>
             {loading ? <CircularProgress size={24} color="inherit" /> : "Add"}

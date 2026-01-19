@@ -9,6 +9,7 @@ import ProductCard from "../../components/ProductCard";
 import AddFacilityModal from "../../components/AddFacilityModal";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
+import Loader from "@/app/components/Loader";
 
 export default function AdminFacilities() {
   // Filters
@@ -125,7 +126,9 @@ export default function AdminFacilities() {
               </Button>
             </Box>
 
-            {facilities.length === 0 ? (
+            {loading ? (
+              <Loader />
+            ) : facilities.length === 0 ? (
               <div className="text-center text-gray-500 font-medium py-20">No facilities available.</div>
             ) : (
               <Box className="flex flex-wrap gap-8 items-center justify-center bg-white rounded-2xl shadow-inner p-4">

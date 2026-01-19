@@ -9,6 +9,7 @@ import ProductCard from "../../components/ProductCard";
 import AddApparelModal from "../../components/AddApparelModal";
 import { useForm } from "react-hook-form";
 import toast, { Toaster } from "react-hot-toast";
+import Loader from "@/app/components/Loader";
 
 export default function AdminApparels() {
   // Filters
@@ -127,7 +128,9 @@ export default function AdminApparels() {
               </Button>
             </Box>
 
-            {apparels.length === 0 ? (
+            {loading ? (
+              <Loader />
+            ) : apparels.length === 0 ? (
               <div className="text-center text-gray-500 font-medium py-20">No apparels available.</div>
             ) : (
               <Box className="flex flex-wrap gap-8 items-center justify-center bg-white rounded-2xl shadow-inner p-4">

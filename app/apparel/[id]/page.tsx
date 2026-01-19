@@ -4,16 +4,19 @@ import { useParams } from "next/navigation"; // for app router
 import { apparel } from "../../../lib/data";
 import ProductDetail from "../../components/ProductDetail";
 import { useEffect, useState } from "react";
+import Loader from "@/app/components/Loader";
+import toast from "react-hot-toast";
 
 export default function FacilityDetailPage() {
   const params = useParams();
   const { id } = params;
 
   const [apparel, setApparel] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchApparel = async (apparelID) => {
-    console.log(apparelID);
     try {
+      setLoading(true);
       const res = await fetch(`/api/apparels/${apparelID}`); // create this API
       console.log(res);
       if (!res.ok) throw new Error("Failed to fetch apparel");
@@ -22,6 +25,7 @@ export default function FacilityDetailPage() {
     } catch (err) {
       toast.error(err.message);
     } finally {
+      setLoading(false);
     }
   };
 
@@ -29,9 +33,5 @@ export default function FacilityDetailPage() {
     fetchApparel(id);
   }, [id]);
 
-  if (!apparel) {
-    return <p className="text-center text-red-500 mt-20">Apparel not found!</p>;
-  }
-
-  return apparel && <ProductDetail product={apparel} />;
+  return loading ? <Loader /> : apparel && <ProductDetail product={apparel} />;
 }

@@ -7,9 +7,10 @@ import TitlePage from "../components/TitlePage";
 import toast from "react-hot-toast";
 import { Drawer, IconButton, Button } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import Loader from "../components/Loader";
 
 export default function Apparel() {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [apparels, setApparels] = useState([]);
 
   const [selectedSports, setSelectedSports] = useState([]);
@@ -77,7 +78,9 @@ export default function Apparel() {
           </Drawer>
 
           <div className="flex-1 bg-white rounded-2xl shadow-inner p-4">
-            {apparels.length === 0 ? (
+            {loading ? (
+              <Loader />
+            ) : apparels.length === 0 ? (
               <div className="text-center text-gray-500 font-medium py-20">No apparels available.</div>
             ) : (
               <div className="flex flex-wrap gap-8 items-center justify-center">

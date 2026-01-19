@@ -2,10 +2,23 @@
 
 import { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Typography, Stack, Button, Chip, Box } from "@mui/material";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Typography,
+  Stack,
+  Button,
+  Chip,
+  Box,
+  Skeleton,
+  CircularProgress,
+} from "@mui/material";
 import { customStyles } from "./ApparelTransactionsTable";
 import toast from "react-hot-toast";
 import TransactionFilter from "./TransactionFilter";
+import Loader from "./Loader";
 
 export default function FacilityTransactionsTable() {
   const [open, setOpen] = useState(false);
@@ -16,9 +29,11 @@ export default function FacilityTransactionsTable() {
   const [facilityTransactions, setFacilityTransactions] = useState([]);
   const [search, setSearch] = useState("");
   const [date, setDate] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const fetchFacilityTransactions = async () => {
     try {
+      setLoading(true);
       const params = new URLSearchParams();
       params.append("search", search);
       if (date) {
@@ -30,7 +45,9 @@ export default function FacilityTransactionsTable() {
       if (!res.ok) throw new Error("Failed to fetch facility transactions");
       const data = await res.json();
       setFacilityTransactions(data);
+      setLoading(false);
     } catch (err) {
+      setLoading(false);
       toast.error(err.message);
     } finally {
     }
@@ -132,6 +149,8 @@ export default function FacilityTransactionsTable() {
         striped
         customStyles={customStyles}
         onRowClicked={handleRowClick}
+        progressPending={loading}
+        progressComponent={<Loader />}
       />
 
       {/* Transaction Details Modal */}

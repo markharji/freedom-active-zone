@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  images: {
+    domains: [
+      "magenta-patient-possum-850.mypinata.cloud", // Add your Pinata domain here
+    ],
+  },
 };
 
 export default nextConfig;
