@@ -124,6 +124,45 @@ export default function ProductDetail({ product }) {
     return isTimeOverlap(proposedStart, proposedEnd);
   };
 
+  const paymentFunction = async (data, transaction) => {
+    const createRes = await fetch("/api/payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "create_intent",
+        amount: totalPrice * 100, // e.g., 444.00 PHP
+        payment_method_allowed: ["gcash"],
+        description: `${product.name} - ${dayjs(data.date).format("DD-MM-YYYY")} (${data.startTime + "-" + data.endTime}) , ${data.name}`,
+      }),
+    });
+
+    const intentData = await createRes.json();
+    const paymentIntentId = intentData.data.id;
+
+    // 2️⃣ Confirm Payment Intent with GCash phone number
+    const confirmRes = await fetch("/api/payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "create_payment_method",
+        paymentIntentId,
+        paymentMethod: "gcash",
+        phone: data.contact,
+        transactionId: transaction._id,
+      }),
+    });
+
+    const confirmData = await confirmRes.json();
+    console.log(confirmData.data);
+    const redirectUrl = confirmData.data.attributes.next_action.redirect.url;
+    // 3️⃣ Redirect user to PayMongo checkout in new tab
+    if (redirectUrl) {
+      window.open(redirectUrl, "_self")?.focus();
+    } else {
+      alert("No redirect URL returned. Check paymentIntent status.");
+    }
+  };
+
   const handleSuggestSlots = async () => {
     if (!selectedDate) {
       toast.error("Please select a date first");
@@ -169,11 +208,7 @@ export default function ProductDetail({ product }) {
       const result = await res.json();
       if (!res.ok) throw new Error(result.message || "Failed to book facility");
 
-      setReferenceId(result.transaction._id || "N/A");
-      setOpenConfirm(true);
-      setLoading(false);
-
-      setTimeout(() => setOpenConfirm(false), 5000);
+      paymentFunction(data, result.transaction);
     } catch (err) {
       setLoading(false);
       toast.error(err.message || "Booking failed");
@@ -422,6 +457,7 @@ export default function ProductDetail({ product }) {
           </Box>
           <DialogContent dividers sx={{ px: 3, py: 2 }}>
             <Box sx={{ display: "grid", gap: 2 }}>
+              {/* Existing Booking Details */}
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <InfoIcon sx={{ color: "#1f7a49" }} />
                 <Typography>
@@ -458,8 +494,25 @@ export default function ProductDetail({ product }) {
                   <strong>Total Price:</strong> ₱{totalHours * product.price}
                 </Typography>
               </Box>
+
+              {/* --- PAYMENT METHOD SELECTOR --- */}
+              <FormControl fullWidth sx={{ mt: 2 }}>
+                <InputLabel id="preview-payment-method-label" className="bg-white">
+                  Payment Method
+                </InputLabel>
+                <Select
+                  labelId="preview-payment-method-label"
+                  value={formDataPreview?.paymentMethod || "card"}
+                  onChange={(e) => setFormDataPreview({ ...formDataPreview, paymentMethod: e.target.value })}
+                >
+                  <MenuItem value="card">Card</MenuItem>
+                  <MenuItem value="gcash">GCash</MenuItem>
+                  <MenuItem value="grab_pay">GrabPay</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
           </DialogContent>
+
           <DialogActions sx={{ px: 3, py: 2, justifyContent: "space-between" }}>
             <Button
               onClick={() => setOpenPreview(false)}
@@ -471,7 +524,7 @@ export default function ProductDetail({ product }) {
             <Button
               onClick={async () => {
                 setOpenPreview(false);
-                await onSubmit(formDataPreview);
+                await onSubmit(formDataPreview); // paymentMethod is now included
               }}
               variant="contained"
               sx={{ bgcolor: "#1f7a49", color: "white", borderRadius: 2, "&:hover": { bgcolor: "#14532d" } }}

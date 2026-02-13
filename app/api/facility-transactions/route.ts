@@ -19,6 +19,7 @@ export async function GET(req) {
     const status = searchParams.get("status");
     const dateStr = searchParams.get("date");
     const userName = searchParams.get("search"); // expected "DD-MM-YYYY"
+    const sport = searchParams.get("sport");
 
     const filter: any = {};
 
@@ -39,7 +40,17 @@ export async function GET(req) {
       filter.date = dateStr;
     }
 
-    const transactions = await FacilityTransaction.find(filter).populate("facility");
+    const populateOptions: any = { path: "facility" };
+    if (sport && sport !== "all") {
+      populateOptions.match = { sport: sport };
+    }
+
+    let transactions = await FacilityTransaction.find(filter).populate(populateOptions).lean();
+
+    // Remove transactions where populate returned null (facility didn't match sport)
+    if (populateOptions.match) {
+      transactions = transactions.filter((t) => t.facility !== null);
+    }
 
     return NextResponse.json(transactions);
   } catch (err) {
@@ -129,6 +140,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ message: "Transaction ID and status are required" }, { status: 400 });
     }
 
+    console.log(transactionId, status);
     // Only allow certain status updates
     const allowedStatuses = ["pending", "confirmed", "cancelled"];
     if (!allowedStatuses.includes(status)) {

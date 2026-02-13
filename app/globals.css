@@ -24,3 +24,15 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.rbc-time-gutter {
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+}
+
+/* Each time label (7:00 AM etc.) */
+.rbc-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}

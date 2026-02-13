@@ -2,6 +2,8 @@
 
 import ApparelTransactionsTable from "@/app/components/ApparelTransactionsTable";
 import FacilityTransactionsTable from "@/app/components/FacilityTransactionsTable";
+import MyCalendar from "@/app/components/MyCalendar";
+import SportsSchedule from "@/app/components/SportsSchedule";
 import TabsWrapper from "@/app/components/TabsWrapper";
 
 // Fetch facility transactions
@@ -24,6 +26,11 @@ export default function AdminHomePage() {
           },
         ]}
       />
+
+      {/* <MyCalendar /> */}
+      <div className="mt-4">
+        <SportsSchedule />
+      </div>
     </div>
   );
 }
