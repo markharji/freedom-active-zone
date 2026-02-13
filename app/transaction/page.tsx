@@ -81,50 +81,13 @@ export default function Facilities() {
         transaction && (
           <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 pt-2 px-4">
             <div className="bg-white rounded-xl shadow-lg max-w-3xl w-full overflow-hidden">
-              <div className="bg-green-700 text-white py-6 px-8">
-                <h1 className="text-2xl font-bold mb-1">Booking Confirmed!</h1>
-                <p className="text-sm opacity-90">Your booking has been successfully submitted.</p>
+              <div className="bg-[#101727] text-white py-6 px-8">
+                <h1 className="text-2xl font-bold mb-1">Booking Details!</h1>
+                <p className="text-sm opacity-90">This is your booking details.</p>
               </div>
 
               {/* Main content */}
               <div className="px-2 md:px-8 py-6 space-y-6">
-                <div className="space-y-3">
-                  {/* Notice / Heads-up */}
-                  <div className="flex items-start bg-blue-50 border-l-4 border-blue-400 text-blue-800 px-4 py-3 rounded-lg shadow-sm">
-                    <svg
-                      className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 16h-1v-4h-1m1-4h.01M12 20c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z"
-                      />
-                    </svg>
-                    <div>
-                      <p className="font-semibold">Heads-up!</p>
-                      <p className="text-sm text-blue-800 opacity-90">
-                        Remember to save or take note of this reference number{" "}
-                        <span
-                          className="font-semibold underline cursor-pointer hover:text-blue-900"
-                          onClick={() => {
-                            navigator.clipboard.writeText(transaction._id);
-                            toast.success("Copied Successfully");
-                          }}
-                          title="Click to copy"
-                        >
-                          {transaction._id}
-                        </span>
-                        . You’ll need it for your booking records.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
                 {/* User Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
