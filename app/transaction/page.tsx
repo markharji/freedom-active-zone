@@ -56,11 +56,11 @@ export default function Facilities() {
           <Controller
             name="transactionId"
             control={control}
-            rules={{ required: "Customer Name is required" }}
+            rules={{ required: "Reference ID is required" }}
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Customer Name"
+                label="Reference ID"
                 variant="outlined"
                 error={!!errors.name}
                 helperText={errors.name?.message}
