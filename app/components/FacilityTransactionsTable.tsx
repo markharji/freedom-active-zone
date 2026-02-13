@@ -25,6 +25,9 @@ export default function FacilityTransactionsTable() {
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [transactionToCancel, setTransactionToCancel] = useState<any>(null);
+  const [transactionToConfirm, setTransactionToConfirm] = useState<any>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [facilityTransactions, setFacilityTransactions] = useState([]);
   const [search, setSearch] = useState("");
@@ -77,6 +80,16 @@ export default function FacilityTransactionsTable() {
     setTransactionToCancel(null);
   };
 
+  const handleConfirmClick = (transaction: any) => {
+    setTransactionToConfirm(transaction);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmDialogClose = () => {
+    setConfirmDialogOpen(false);
+    setTransactionToCancel(null);
+  };
+
   const handleConfirmCancel = async () => {
     if (!transactionToCancel) return;
 
@@ -102,6 +115,31 @@ export default function FacilityTransactionsTable() {
     }
   };
 
+  const handleConfirmTransaction = async () => {
+    if (!transactionToConfirm) return;
+
+    setLoadingId(transactionToConfirm._id);
+
+    try {
+      const res = await fetch("/api/facility-transactions", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transactionId: transactionToConfirm._id, status: "confirmed" }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Failed to confirm transaction");
+
+      toast.success("Transaction confirmed successfully!");
+      fetchFacilityTransactions();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to confirm transaction");
+    } finally {
+      setLoadingId(null);
+      handleConfirmDialogClose();
+    }
+  };
+
   const columns = [
     { name: "Customer Name", selector: (row: any) => row.userName, sortable: true },
     { name: "Email", selector: (row: any) => row.userEmail },
@@ -114,26 +152,40 @@ export default function FacilityTransactionsTable() {
     {
       name: "Status",
       selector: (row: any) => row.status,
+      sortable: true,
       cell: (row: any) => (
         <Chip
           label={row.status}
-          color={row.status === "Completed" ? "success" : row.status === "pending" ? "warning" : "error"}
+          color={row.status === "confirmed" ? "success" : row.status === "pending" ? "warning" : "error"}
           size="small"
         />
       ),
     },
     {
       name: "Action",
+      width: "17%",
       cell: (row: any) => (
-        <Button
-          variant="contained"
-          color="error"
-          size="small"
-          disabled={row.status === "cancelled" || loadingId === row._id}
-          onClick={() => handleCancelClick(row)}
-        >
-          {loadingId === row._id ? "Cancelling..." : "Cancel"}
-        </Button>
+        <div className="flex gap-2 w-full">
+          <Button
+            variant="contained"
+            color="error"
+            size="small"
+            disabled={row.status === "cancelled" || row.status === "confirmed" || loadingId === row._id}
+            onClick={() => handleCancelClick(row)}
+          >
+            {loadingId === row._id ? "Cancelling..." : "Cancel"}
+          </Button>
+
+          <Button
+            variant="contained"
+            color="success"
+            size="small"
+            disabled={row.status === "cancelled" || row.status === "confirmed" || loadingId === row._id}
+            onClick={() => handleConfirmClick(row)}
+          >
+            {loadingId === row._id ? "Cancelling..." : "Confirm"}
+          </Button>
+        </div>
       ),
     },
   ];
@@ -227,6 +279,30 @@ export default function FacilityTransactionsTable() {
             disabled={loadingId === transactionToCancel?._id}
           >
             {loadingId === transactionToCancel?._id ? "Cancelling..." : "Yes, Cancel"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={confirmDialogOpen} onClose={handleConfirmDialogClose}>
+        <DialogTitle>Confirm Cancellation</DialogTitle>
+        <DialogContent dividers>
+          <Typography>
+            Are you sure you want to confirm the transaction for <strong>{transactionToConfirm?.userName}</strong> on{" "}
+            <strong>{transactionToConfirm?.date}</strong>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleConfirmDialogClose} variant="outlined" color="primary">
+            No
+          </Button>
+          <Button
+            onClick={handleConfirmTransaction}
+            variant="contained"
+            color="error"
+            disabled={loadingId === transactionToConfirm?._id}
+          >
+            {loadingId === transactionToConfirm?._id ? "Confirming..." : "Yes, Confirm"}
           </Button>
         </DialogActions>
       </Dialog>

@@ -199,11 +199,37 @@ export default function SportsSchedule() {
       <Calendar
         localizer={localizer}
         events={facilityTransactions}
-        resources={facilities?.map((res) => ({ resourceId: res._id, resourceTitle: res.name })) || []}
+        resources={
+          facilities?.map((res) => ({
+            resourceId: res._id,
+            resourceTitle: res.name,
+          })) || []
+        }
         resourceIdAccessor="resourceId"
         resourceTitleAccessor="resourceTitle"
         startAccessor="start"
         endAccessor="end"
+        eventPropGetter={(event) => {
+          let backgroundColor = "#3174ad"; // default
+
+          if (event.status === "cancelled") {
+            backgroundColor = "#d03032";
+          } else if (event.status === "pending") {
+            backgroundColor = "#ed6b03";
+          } else if (event.status === "confirmed") {
+            backgroundColor = "#2f7c33";
+          }
+
+          return {
+            style: {
+              backgroundColor,
+              borderRadius: "6px",
+              opacity: 0.9,
+              color: "white",
+              border: "none",
+            },
+          };
+        }}
         components={{
           resourceHeader: ResourceHeader,
           toolbar: CustomToolbar,
@@ -222,10 +248,10 @@ export default function SportsSchedule() {
         timeslots={1}
         style={{ height: "100%" }}
         onSelectEvent={(event) => setSelectedEvent(event)}
-        selectable={true}
+        selectable
         onSelectSlot={(slotInfo) => {
           const facility = facilities.find(({ _id }) => _id === slotInfo.resourceId);
-          setSelectedSlot({ ...slotInfo, facility }); // prefill form with start/end/resource
+          setSelectedSlot({ ...slotInfo, facility });
           setOpenBooking(true);
         }}
       />
