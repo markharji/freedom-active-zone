@@ -59,7 +59,7 @@ const FacilitySchema = new mongoose.Schema(
       },
     },
 
-    hotspot: { type: HotspotSchema, required: false }, // ✅ add hotspot
+    hotspot: { type: [HotspotSchema], required: false }, // ✅ add hotspot
 
     thumbnail: { type: String },
     rating: { type: Number, default: 0 },

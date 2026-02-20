@@ -1,46 +1,90 @@
 "use client";
 
-import { useState, useRef } from "react";
 import { Box } from "@mui/material";
 import Link from "next/link";
 
-export default function FloorplanWithHotspot({ facilities }) {
-  const imgRef = useRef<HTMLImageElement>(null);
+interface Facility {
+  _id: string;
+  name: string;
+  hotspot?: { x: number; y: number }[]; // 0-100 %
+}
 
-  const handleHotspotClick = () => {
-    alert("Hotspot clicked!");
-  };
+interface Props {
+  facilities: Facility[];
+}
 
-  console.log(facilities);
+export default function FloorplanWithHotspot({ facilities }: Props) {
   return (
     <Box sx={{ width: "100%", maxWidth: 1200, mx: "auto", position: "relative" }}>
-      <img ref={imgRef} src="/freedom.jpg" alt="Freedom" style={{ width: "100%", borderRadius: 8, display: "block" }} />
+      {/* Floorplan image */}
+      <img src="/freedom.jpg" alt="Freedom" style={{ width: "100%", borderRadius: 8, display: "block" }} />
 
-      {facilities?.length > 0 &&
-        facilities.map(({ hotspot, _id, name }) => {
-          return hotspot ? (
-            <Link
-              key={_id}
-              href={`/facilities/${_id}`}
+      {/* Polygon hotspots */}
+      {facilities?.map(({ hotspot, _id, name }) => {
+        if (!hotspot || hotspot.length < 3) return null;
+
+        // Find bounding box for this polygon
+        const xs = hotspot.map((p) => p.x);
+        const ys = hotspot.map((p) => p.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+
+        const width = maxX - minX;
+        const height = maxY - minY;
+
+        // Offset points to polygon’s local SVG coordinates
+        const points = hotspot.map((p) => `${p.x - minX},${p.y - minY}`).join(" ");
+
+        return (
+          <Link
+            key={_id}
+            href={`/facilities/${_id}`}
+            style={{
+              position: "absolute",
+              top: `${minY}%`,
+              left: `${minX}%`,
+              width: `${width}%`,
+              height: `${height}%`,
+              pointerEvents: "auto",
+            }}
+          >
+            <svg
+              viewBox={`0 0 ${width} ${height}`}
+              preserveAspectRatio="none"
               style={{
-                position: "absolute",
-                left: `${hotspot.x}%`,
-                top: `${hotspot.y}%`,
-                transform: "translate(-50%, -50%)",
-                width: 20,
-                height: 20,
-                borderRadius: "50%",
-                backgroundColor: "red",
-                border: "2px solid white",
+                width: "100%",
+                height: "100%",
+                overflow: "visible",
                 cursor: "pointer",
-                boxShadow: "0 0 6px rgba(0,0,0,0.4)",
               }}
-              title={name}
-            />
-          ) : (
-            <p key={_id}></p>
-          );
-        })}
+            >
+              <polygon
+                points={points}
+                fill="rgba(0,123,255,0.3)"
+                stroke="rgba(0,123,255,0.8)"
+                strokeWidth={0.5}
+                style={{
+                  transition: "transform 0.2s, fill 0.2s",
+                  transformOrigin: "50% 50%",
+                }}
+                onMouseEnter={(e) => {
+                  const target = e.currentTarget;
+                  target.style.transform = "scale(1.05)";
+                  target.style.fill = "rgba(0,123,255,0.5)";
+                }}
+                onMouseLeave={(e) => {
+                  const target = e.currentTarget;
+                  target.style.transform = "scale(1)";
+                  target.style.fill = "rgba(0,123,255,0.3)";
+                }}
+                title={name}
+              />
+            </svg>
+          </Link>
+        );
+      })}
     </Box>
   );
 }

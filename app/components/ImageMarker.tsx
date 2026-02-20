@@ -6,28 +6,43 @@ import CloseIcon from "@mui/icons-material/Close";
 
 export default function ImageMarkerModal({ open, onClose, onSave }) {
   const imgRef = useRef(null);
-  const [point, setPoint] = useState(null); // ✅ single hotspot
+  const [points, setPoints] = useState([]); // multiple points for polygon
+  const [polygonFinalized, setPolygonFinalized] = useState(false);
 
+  // Add a point on image click
   const handleClick = (e) => {
-    if (!imgRef.current) return;
+    if (!imgRef.current || polygonFinalized) return;
 
     const rect = imgRef.current.getBoundingClientRect();
-
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    // Replace existing point (only one allowed)
-
-    setPoint({ x, y });
+    setPoints([...points, { x, y }]);
   };
 
+  // Clear all points
   const handleClear = () => {
-    setPoint(null);
+    setPoints([]);
+    setPolygonFinalized(false);
   };
 
+  // Save polygon points
   const handleSave = () => {
-    onSave(point); // keep array format for compatibility
+    if (points.length < 3) {
+      alert("Polygon must have at least 3 points");
+      return;
+    }
+    onSave(points); // send array of points
     onClose();
+  };
+
+  // Finalize polygon (stop adding new points)
+  const handleFinish = () => {
+    if (points.length < 3) {
+      alert("Polygon must have at least 3 points");
+      return;
+    }
+    setPolygonFinalized(true);
   };
 
   return (
@@ -47,7 +62,7 @@ export default function ImageMarkerModal({ open, onClose, onSave }) {
       >
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography fontWeight="bold">Configure Hotspot</Typography>
+          <Typography fontWeight="bold">Configure Polygon</Typography>
           <IconButton onClick={onClose}>
             <CloseIcon />
           </IconButton>
@@ -61,40 +76,72 @@ export default function ImageMarkerModal({ open, onClose, onSave }) {
             alt="Freedom"
             style={{
               width: "100%",
-              cursor: "crosshair",
+              cursor: polygonFinalized ? "default" : "crosshair",
               borderRadius: 8,
               display: "block",
             }}
             onClick={handleClick}
           />
 
-          {/* Hotspot */}
-          {point && (
-            <div
+          {/* SVG overlay for polygon */}
+          {points.length > 0 && (
+            <svg
               style={{
                 position: "absolute",
-                left: `${point.x}%`,
-                top: `${point.y}%`,
-                width: 20,
-                height: 20,
-                borderRadius: "50%",
-                backgroundColor: "red",
-                transform: "translate(-50%, -50%)",
-                border: "2px solid white",
-                boxShadow: "0 0 6px rgba(0,0,0,0.4)",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                pointerEvents: "none", // allows clicks on image
               }}
-            />
+            >
+              {/* Filled polygon */}
+              <polygon
+                points={points.map((p) => `${p.x}% ${p.y}%`).join(",")}
+                fill="rgba(255,0,0,0.3)" // semi-transparent fill
+                stroke="red"
+                strokeWidth="2"
+              />
+
+              {/* Draw lines explicitly connecting vertices */}
+              {points.length > 1 &&
+                points.map((p, i) => {
+                  const next = points[(i + 1) % points.length];
+                  return (
+                    <line
+                      key={i}
+                      x1={`${p.x}%`}
+                      y1={`${p.y}%`}
+                      x2={`${next.x}%`}
+                      y2={`${next.y}%`}
+                      stroke="red"
+                      strokeWidth="2"
+                    />
+                  );
+                })}
+
+              {/* Draw vertices */}
+              {points.map((p, i) => (
+                <circle key={i} cx={`${p.x}%`} cy={`${p.y}%`} r={5} fill="red" stroke="white" strokeWidth={1} />
+              ))}
+            </svg>
           )}
         </Box>
 
         {/* Actions */}
         <Box mt={3} display="flex" gap={2}>
-          <Button variant="outlined" fullWidth onClick={handleClear} disabled={!point}>
+          <Button variant="outlined" fullWidth onClick={handleClear} disabled={points.length === 0}>
             Clear
           </Button>
 
-          <Button variant="contained" fullWidth onClick={handleSave} disabled={!point}>
-            Save Hotspot
+          {!polygonFinalized && (
+            <Button variant="contained" fullWidth onClick={handleFinish} disabled={points.length < 3}>
+              Finish Polygon
+            </Button>
+          )}
+
+          <Button variant="contained" fullWidth onClick={handleSave} disabled={points.length < 3}>
+            Save Polygon
           </Button>
         </Box>
       </Box>
