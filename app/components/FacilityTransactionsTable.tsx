@@ -163,7 +163,7 @@ export default function FacilityTransactionsTable() {
     },
     {
       name: "Action",
-      width: "17%",
+      width: "18%",
       cell: (row: any) => (
         <div className="flex gap-2 w-full">
           <Button

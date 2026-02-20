@@ -20,7 +20,10 @@ export default function Header({ fromAdmin = false }) {
   return (
     <header className="sticky top-0 left-0 w-full bg-gray-900 bg-opacity-95 text-white shadow-md z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-        <div className="text-2xl font-bold">Freedom Active Zone</div>
+        <div className="text-2xl font-bold flex gap-2 items-center">
+          <img src="/logo.jpg" style={{ height: "40px", width: "40px" }} />
+          <p>Freedom Active Zone</p>
+        </div>
 
         {/* Desktop Menu */}
         <nav className="hidden md:flex space-x-8 font-semibold">
