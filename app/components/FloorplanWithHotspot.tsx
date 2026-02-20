@@ -1,6 +1,6 @@
 "use client";
 
-import { Box } from "@mui/material";
+import { Box, Tooltip } from "@mui/material";
 import Link from "next/link";
 
 interface Facility {
@@ -20,10 +20,10 @@ export default function FloorplanWithHotspot({ facilities }: Props) {
       <img src="/freedom.jpg" alt="Freedom" style={{ width: "100%", borderRadius: 8, display: "block" }} />
 
       {/* Polygon hotspots */}
-      {facilities?.map(({ hotspot, _id, name }) => {
+      {facilities?.map(({ hotspot, _id, name, sport }) => {
         if (!hotspot || hotspot.length < 3) return null;
 
-        // Find bounding box for this polygon
+        // Compute bounding box for the polygon
         const xs = hotspot.map((p) => p.x);
         const ys = hotspot.map((p) => p.y);
         const minX = Math.min(...xs);
@@ -34,55 +34,56 @@ export default function FloorplanWithHotspot({ facilities }: Props) {
         const width = maxX - minX;
         const height = maxY - minY;
 
-        // Offset points to polygon’s local SVG coordinates
+        // Local polygon points relative to bounding box
         const points = hotspot.map((p) => `${p.x - minX},${p.y - minY}`).join(" ");
 
         return (
-          <Link
-            key={_id}
-            href={`/facilities/${_id}`}
-            style={{
-              position: "absolute",
-              top: `${minY}%`,
-              left: `${minX}%`,
-              width: `${width}%`,
-              height: `${height}%`,
-              pointerEvents: "auto",
-            }}
-          >
-            <svg
-              viewBox={`0 0 ${width} ${height}`}
-              preserveAspectRatio="none"
+          <Tooltip key={_id} title={<p className="text-sm">{name}</p>} placement="top" arrow>
+            <Link
+              href={`/facilities/${_id}`}
               style={{
-                width: "100%",
-                height: "100%",
-                overflow: "visible",
-                cursor: "pointer",
+                position: "absolute",
+                top: `${minY}%`,
+                left: `${minX}%`,
+                width: `${width}%`,
+                height: `${height}%`,
+                pointerEvents: "auto",
+                display: "block",
               }}
             >
-              <polygon
-                points={points}
-                fill="rgba(0,123,255,0.3)"
-                stroke="rgba(0,123,255,0.8)"
-                strokeWidth={0.5}
+              <svg
+                viewBox={`0 0 ${width} ${height}`}
+                preserveAspectRatio="none"
                 style={{
-                  transition: "transform 0.2s, fill 0.2s",
-                  transformOrigin: "50% 50%",
+                  width: "100%",
+                  height: "100%",
+                  overflow: "visible",
+                  cursor: "pointer",
                 }}
-                onMouseEnter={(e) => {
-                  const target = e.currentTarget;
-                  target.style.transform = "scale(1.05)";
-                  target.style.fill = "rgba(0,123,255,0.5)";
-                }}
-                onMouseLeave={(e) => {
-                  const target = e.currentTarget;
-                  target.style.transform = "scale(1)";
-                  target.style.fill = "rgba(0,123,255,0.3)";
-                }}
-                title={name}
-              />
-            </svg>
-          </Link>
+              >
+                <polygon
+                  points={points}
+                  fill="rgba(0,123,255,0.3)"
+                  stroke="rgba(0,123,255,0.8)"
+                  strokeWidth={0.5}
+                  style={{
+                    transition: "transform 0.2s, fill 0.2s",
+                    transformOrigin: "50% 50%",
+                  }}
+                  onMouseEnter={(e) => {
+                    const target = e.currentTarget;
+                    target.style.transform = "scale(1.05)";
+                    target.style.fill = "rgba(0,123,255,0.5)";
+                  }}
+                  onMouseLeave={(e) => {
+                    const target = e.currentTarget;
+                    target.style.transform = "scale(1)";
+                    target.style.fill = "rgba(0,123,255,0.3)";
+                  }}
+                />
+              </svg>
+            </Link>
+          </Tooltip>
         );
       })}
     </Box>
