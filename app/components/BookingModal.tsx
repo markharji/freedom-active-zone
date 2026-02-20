@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   TextField,
@@ -42,41 +42,77 @@ export default function BookingModal({ open, onClose, slot, loading, fetchFacili
     },
   });
 
+  const [rewards, setRewards] = useState([]);
+
+  const fetchRewards = async () => {
+    try {
+      const params = new URLSearchParams();
+      params.append("status", "active");
+      params.append("selectedDate", selectedDate);
+
+      const res = await fetch(`/api/rewards?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch rewards");
+      const data = await res.json();
+
+      setRewards(data);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+    }
+  };
+
   const selectedDate = watch("date");
+
+  useEffect(() => {
+    if (selectedDate) {
+      fetchRewards();
+    }
+  }, [selectedDate]);
+
   const startTime = watch("startTime");
   const hours = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, "0")}:00`);
   const totalHours =
     startTime && watch("endTime") ? parseInt(watch("endTime").split(":")[0]) - parseInt(startTime.split(":")[0]) : 0;
-  const computeTotalPrice = (timeSlots, startTime, endTime) => {
+  const computeTotalPrice = (timeSlots, startTime, endTime, rewards) => {
     if (!timeSlots || timeSlots.length === 0) return 0;
-    if (timeSlots.length === 1) {
-      const slot = timeSlots[0];
-      const hours = parseInt(endTime.split(":")[0]) - parseInt(startTime.split(":")[0]);
-      return slot.price * hours;
-    }
 
-    // Multiple time slots
     const startHour = parseInt(startTime.split(":")[0]);
     const endHour = parseInt(endTime.split(":")[0]);
 
     let total = 0;
 
-    for (const slot of timeSlots) {
-      // If slot is completely outside the selected range, skip
-      if (slot.end <= startHour || slot.start >= endHour) continue;
+    if (timeSlots.length === 1) {
+      const slot = timeSlots[0];
+      const hours = endHour - startHour; // assume selected range within slot
+      total = slot.price * hours;
+    } else {
+      // Multiple time slots
+      for (const slot of timeSlots) {
+        if (slot.end <= startHour || slot.start >= endHour) continue;
 
-      // Compute overlapping hours
-      const overlapStart = Math.max(slot.start, startHour);
-      const overlapEnd = Math.min(slot.end, endHour);
-      const hours = overlapEnd - overlapStart;
+        const overlapStart = Math.max(slot.start, startHour);
+        const overlapEnd = Math.min(slot.end, endHour);
+        const hours = overlapEnd - overlapStart;
 
-      total += hours * slot.price;
+        total += hours * slot.price;
+      }
     }
 
-    return total;
+    // Apply discount if available
+    if (rewards && rewards.length > 0) {
+      const { discountType, discountValue } = rewards[0];
+
+      if (discountType === "percentage") {
+        total = total * (1 - parseFloat(discountValue) / 100);
+      } else if (discountType === "amount") {
+        total = total - parseFloat(discountValue);
+      }
+    }
+
+    return Math.max(0, total); // ensure total is not negative
   };
 
-  const totalPrice = computeTotalPrice(slot?.facility.timeSlots, watch("startTime"), watch("endTime"));
+  const totalPrice = computeTotalPrice(slot?.facility.timeSlots, watch("startTime"), watch("endTime"), rewards);
 
   useEffect(() => {
     if (slot?.start) setValue("date", dayjs(slot.start));
@@ -246,9 +282,18 @@ export default function BookingModal({ open, onClose, slot, loading, fetchFacili
           </LocalizationProvider>
 
           {totalHours > 0 && (
-            <Typography className="text-lg font-semibold text-gray-800 mt-2">
-              Total ({totalHours} {totalHours === 1 ? "hour" : "hours"}): ₱{totalPrice}
-            </Typography>
+            <div className="flex gap-2">
+              <Typography className="text-lg font-semibold text-gray-800 mt-2">
+                Total ({totalHours} {totalHours === 1 ? "hour" : "hours"}): ₱{totalPrice}
+              </Typography>
+              {rewards.length > 0 && (
+                <p style={{ color: "red", fontWeight: 600 }}>
+                  (
+                  {rewards[0].discountType === "percentage" ? `${rewards[0].discountValue}%` : rewards[0].discountValue}
+                  )
+                </p>
+              )}
+            </div>
           )}
         </form>
       </DialogContent>

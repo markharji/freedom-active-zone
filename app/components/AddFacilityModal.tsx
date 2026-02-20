@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import toast from "react-hot-toast";
 import CloseIcon from "@mui/icons-material/Close";
+import ImageMarkerModal from "./ImageMarker";
 
 export default function AddFacilityModal({ open, onClose, fetchFacilities, title = "Facility" }) {
   const {
@@ -25,6 +26,7 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
     setValue,
     watch,
     reset,
+    value,
   } = useForm({
     defaultValues: {
       name: "",
@@ -40,11 +42,13 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
 
   const [previews, setPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [openMarker, setOpenMarker] = useState(false);
 
   const watchImages = watch("images");
   const watchSport = watch("sport");
   const watchConvertible = watch("convertible");
   const watchOtherSports = watch("otherSports");
+  const watchHotspot = watch("hotspot");
 
   const sportsOptions = ["Basketball", "Pickleball", "Volleyball", "Badminton"];
 
@@ -82,6 +86,7 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
       formData.append("description", data.description);
 
       formData.append("timeSlots", JSON.stringify(data.timeSlots));
+      formData.append("hotspot", JSON.stringify(data.hotspot));
 
       if (data.convertible) {
         data.otherSports.forEach((sport) => formData.append("otherSports", sport));
@@ -111,198 +116,199 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
   };
 
   return (
-    <Modal open={open} onClose={onClose}>
-      <Box
-        sx={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 450,
-          maxHeight: "90vh",
-          overflowY: "auto",
-          bgcolor: "background.paper",
-          borderRadius: 2,
-          boxShadow: 24,
-          p: 4,
-        }}
-      >
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6" fontWeight="bold">
-            Add {title}
-          </Typography>
-          <IconButton onClick={onClose}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
+    <>
+      <Modal open={open} onClose={onClose}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 450,
+            maxHeight: "90vh",
+            overflowY: "auto",
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Typography variant="h6" fontWeight="bold">
+              Add {title}
+            </Typography>
+            <IconButton onClick={onClose}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
 
-        <Box component="form" onSubmit={handleSubmit(submitHandler)} noValidate>
-          <TextField
-            fullWidth
-            label="Name"
-            margin="normal"
-            {...register("name", {
-              required: "Name is required",
-            })}
-            error={!!errors.name}
-            helperText={errors.name?.message}
-          />
+          <Box component="form" onSubmit={handleSubmit(submitHandler)} noValidate>
+            <TextField
+              fullWidth
+              label="Name"
+              margin="normal"
+              {...register("name", {
+                required: "Name is required",
+              })}
+              error={!!errors.name}
+              helperText={errors.name?.message}
+            />
 
-          {/* Main Sport */}
-          <TextField
-            select
-            fullWidth
-            label="Sport"
-            margin="normal"
-            {...register("sport", {
-              required: "Sport is required",
-            })}
-            error={!!errors.sport}
-            helperText={errors.sport?.message}
-          >
-            {sportsOptions.map((sport) => (
-              <MenuItem key={sport} value={sport}>
-                {sport}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          {/* Convertible Switch */}
-          <FormControlLabel
-            control={
-              <Switch
-                checked={watchConvertible}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setValue("convertible", checked);
-
-                  // Clear otherSports if turned off
-                  if (!checked) {
-                    setValue("otherSports", []);
-                  }
-                }}
-              />
-            }
-            label="Convertible"
-          />
-
-          {/* Multi Select */}
-          {watchConvertible && (
+            {/* Main Sport */}
             <TextField
               select
               fullWidth
-              label="Other Supported Sports"
+              label="Sport"
               margin="normal"
-              SelectProps={{ multiple: true }}
-              value={watchOtherSports}
-              onChange={(e) => setValue("otherSports", e.target.value)}
+              {...register("sport", {
+                required: "Sport is required",
+              })}
+              error={!!errors.sport}
+              helperText={errors.sport?.message}
             >
-              {sportsOptions
-                .filter((sport) => sport !== watchSport)
-                .map((sport) => (
-                  <MenuItem key={sport} value={sport}>
-                    {sport}
-                  </MenuItem>
-                ))}
+              {sportsOptions.map((sport) => (
+                <MenuItem key={sport} value={sport}>
+                  {sport}
+                </MenuItem>
+              ))}
             </TextField>
-          )}
 
-          <Box mt={2}>
-            <Typography variant="subtitle1" fontWeight="bold">
-              Prices
-            </Typography>
-
-            {(watch("timeSlots") || []).map((slot, index) => (
-              <Paper key={index} sx={{ p: 2, mt: 1, display: "flex", gap: 1, alignItems: "center" }} elevation={1}>
-                {/* Start Hour Dropdown */}
-                <TextField
-                  label="Start Hour"
-                  select
-                  value={slot.start}
+            {/* Convertible Switch */}
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={watchConvertible}
                   onChange={(e) => {
-                    const value = Number(e.target.value);
-                    const updated = [...watch("timeSlots")];
-                    updated[index].start = value;
-                    setValue("timeSlots", updated);
-                  }}
-                  sx={{ flex: 1 }}
-                  required
-                >
-                  {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
-                    <MenuItem key={hour} value={hour}>
-                      {hour}:00
-                    </MenuItem>
-                  ))}
-                </TextField>
+                    const checked = e.target.checked;
+                    setValue("convertible", checked);
 
-                {/* End Hour Dropdown */}
-                <TextField
-                  label="End Hour"
-                  select
-                  value={slot.end}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    const updated = [...watch("timeSlots")];
-                    updated[index].end = value;
-                    setValue("timeSlots", updated);
+                    // Clear otherSports if turned off
+                    if (!checked) {
+                      setValue("otherSports", []);
+                    }
                   }}
-                  sx={{ flex: 1 }}
-                  required
-                >
-                  {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
-                    <MenuItem key={hour} value={hour}>
-                      {hour}:00
-                    </MenuItem>
-                  ))}
-                </TextField>
-
-                {/* Price */}
-                <TextField
-                  label="Price"
-                  type="number"
-                  value={slot.price}
-                  onChange={(e) => {
-                    const updated = [...watch("timeSlots")];
-                    updated[index].price = Number(e.target.value);
-                    setValue("timeSlots", updated);
-                  }}
-                  sx={{ width: 100 }}
-                  required
                 />
+              }
+              label="Convertible"
+            />
 
-                {/* Remove Slot */}
-                <IconButton
-                  color="error"
-                  disabled={watch("timeSlots").length === 1} // prevent removing last slot
-                  onClick={() => {
-                    const updated = watch("timeSlots").filter((_, i) => i !== index);
-                    setValue("timeSlots", updated);
-                  }}
-                >
-                  <CloseIcon />
-                </IconButton>
-              </Paper>
-            ))}
-
-            {/* Error if no slots */}
-            {(!watch("timeSlots") || watch("timeSlots").length === 0) && (
-              <Typography color="error" variant="body2">
-                At least one time slot is required
-              </Typography>
+            {/* Multi Select */}
+            {watchConvertible && (
+              <TextField
+                select
+                fullWidth
+                label="Other Supported Sports"
+                margin="normal"
+                SelectProps={{ multiple: true }}
+                value={watchOtherSports}
+                onChange={(e) => setValue("otherSports", e.target.value)}
+              >
+                {sportsOptions
+                  .filter((sport) => sport !== watchSport)
+                  .map((sport) => (
+                    <MenuItem key={sport} value={sport}>
+                      {sport}
+                    </MenuItem>
+                  ))}
+              </TextField>
             )}
 
-            <Button
-              variant="outlined"
-              fullWidth
-              sx={{ mt: 1 }}
-              onClick={() => {
-                setValue("timeSlots", [...(watch("timeSlots") || []), { start: 6, end: 7, price: 0 }]);
-              }}
-            >
-              Add Time Slot
-            </Button>
-          </Box>
-          {/* <TextField
+            <Box mt={2}>
+              <Typography variant="subtitle1" fontWeight="bold">
+                Prices
+              </Typography>
+
+              {(watch("timeSlots") || []).map((slot, index) => (
+                <Paper key={index} sx={{ p: 2, mt: 1, display: "flex", gap: 1, alignItems: "center" }} elevation={1}>
+                  {/* Start Hour Dropdown */}
+                  <TextField
+                    label="Start Hour"
+                    select
+                    value={slot.start}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      const updated = [...watch("timeSlots")];
+                      updated[index].start = value;
+                      setValue("timeSlots", updated);
+                    }}
+                    sx={{ flex: 1 }}
+                    required
+                  >
+                    {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
+                      <MenuItem key={hour} value={hour}>
+                        {hour}:00
+                      </MenuItem>
+                    ))}
+                  </TextField>
+
+                  {/* End Hour Dropdown */}
+                  <TextField
+                    label="End Hour"
+                    select
+                    value={slot.end}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      const updated = [...watch("timeSlots")];
+                      updated[index].end = value;
+                      setValue("timeSlots", updated);
+                    }}
+                    sx={{ flex: 1 }}
+                    required
+                  >
+                    {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
+                      <MenuItem key={hour} value={hour}>
+                        {hour}:00
+                      </MenuItem>
+                    ))}
+                  </TextField>
+
+                  {/* Price */}
+                  <TextField
+                    label="Price"
+                    type="number"
+                    value={slot.price}
+                    onChange={(e) => {
+                      const updated = [...watch("timeSlots")];
+                      updated[index].price = Number(e.target.value);
+                      setValue("timeSlots", updated);
+                    }}
+                    sx={{ width: 100 }}
+                    required
+                  />
+
+                  {/* Remove Slot */}
+                  <IconButton
+                    color="error"
+                    disabled={watch("timeSlots").length === 1} // prevent removing last slot
+                    onClick={() => {
+                      const updated = watch("timeSlots").filter((_, i) => i !== index);
+                      setValue("timeSlots", updated);
+                    }}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                </Paper>
+              ))}
+
+              {/* Error if no slots */}
+              {(!watch("timeSlots") || watch("timeSlots").length === 0) && (
+                <Typography color="error" variant="body2">
+                  At least one time slot is required
+                </Typography>
+              )}
+
+              <Button
+                variant="outlined"
+                fullWidth
+                sx={{ mt: 1 }}
+                onClick={() => {
+                  setValue("timeSlots", [...(watch("timeSlots") || []), { start: 6, end: 7, price: 0 }]);
+                }}
+              >
+                Add Time Slot
+              </Button>
+            </Box>
+            {/* <TextField
             fullWidth
             label="Price"
             type="number"
@@ -315,19 +321,32 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
             helperText={errors.price?.message}
           /> */}
 
-          <TextField fullWidth label="Description" margin="normal" multiline rows={3} {...register("description")} />
+            <TextField fullWidth label="Description" margin="normal" multiline rows={3} {...register("description")} />
 
-          {/* Upload Images */}
-          <Button variant="contained" component="label" fullWidth sx={{ mt: 2 }}>
-            Upload Images
-            <input type="file" accept="image/*" multiple hidden onChange={handleFileChange} />
-          </Button>
+            {/* Upload Images */}
+            <Button variant="contained" component="label" fullWidth sx={{ mt: 2 }} onClick={() => setOpenMarker(true)}>
+              {watchHotspot ? "Update Hotspot" : "Add Hotspot"}
+            </Button>
+            <p> {JSON.stringify(watchHotspot)}</p>
 
-          <Button type="submit" variant="contained" fullWidth sx={{ mt: 3 }} disabled={loading}>
-            {loading ? <CircularProgress size={24} color="inherit" /> : "Add"}
-          </Button>
+            <Button variant="contained" component="label" fullWidth sx={{ mt: 2 }}>
+              Upload Images
+              <input type="file" accept="image/*" multiple hidden onChange={handleFileChange} />
+            </Button>
+
+            <Button type="submit" variant="contained" fullWidth sx={{ mt: 3 }} disabled={loading}>
+              {loading ? <CircularProgress size={24} color="inherit" /> : "Add"}
+            </Button>
+          </Box>
         </Box>
-      </Box>
-    </Modal>
+      </Modal>
+      <ImageMarkerModal
+        open={openMarker}
+        onClose={() => setOpenMarker(false)}
+        onSave={(point) => {
+          setValue("hotspot", point);
+        }}
+      />
+    </>
   );
 }

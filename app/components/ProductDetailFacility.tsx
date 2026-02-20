@@ -57,6 +57,7 @@ export default function ProductDetail({ product }) {
   const [referenceId, setReferenceId] = useState("");
   const [loading, setLoading] = useState(false);
   const [showSlots, setShowSlots] = useState(true);
+  const [rewards, setRewards] = useState([]);
 
   const {
     handleSubmit,
@@ -86,37 +87,71 @@ export default function ProductDetail({ product }) {
   const totalHours =
     startTime && watch("endTime") ? parseInt(watch("endTime").split(":")[0]) - parseInt(startTime.split(":")[0]) : 0;
 
-  const computeTotalPrice = (timeSlots, startTime, endTime) => {
+  const computeTotalPrice = (timeSlots, startTime, endTime, rewards) => {
     if (!timeSlots || timeSlots.length === 0) return 0;
-    if (timeSlots.length === 1) {
-      const slot = timeSlots[0];
-      const hours = parseInt(endTime.split(":")[0]) - parseInt(startTime.split(":")[0]);
-      return slot.price * hours;
-    }
 
-    // Multiple time slots
     const startHour = parseInt(startTime.split(":")[0]);
     const endHour = parseInt(endTime.split(":")[0]);
 
     let total = 0;
 
-    for (const slot of timeSlots) {
-      // If slot is completely outside the selected range, skip
-      if (slot.end <= startHour || slot.start >= endHour) continue;
+    if (timeSlots.length === 1) {
+      const slot = timeSlots[0];
+      const hours = endHour - startHour; // assume selected range within slot
+      total = slot.price * hours;
+    } else {
+      // Multiple time slots
+      for (const slot of timeSlots) {
+        if (slot.end <= startHour || slot.start >= endHour) continue;
 
-      // Compute overlapping hours
-      const overlapStart = Math.max(slot.start, startHour);
-      const overlapEnd = Math.min(slot.end, endHour);
-      const hours = overlapEnd - overlapStart;
+        const overlapStart = Math.max(slot.start, startHour);
+        const overlapEnd = Math.min(slot.end, endHour);
+        const hours = overlapEnd - overlapStart;
 
-      total += hours * slot.price;
+        total += hours * slot.price;
+      }
     }
 
-    return total;
+    // Apply discount if available
+    if (rewards && rewards.length > 0) {
+      const { discountType, discountValue } = rewards[0];
+
+      if (discountType === "percentage") {
+        total = total * (1 - parseFloat(discountValue) / 100);
+      } else if (discountType === "amount") {
+        total = total - parseFloat(discountValue);
+      }
+    }
+
+    return Math.max(0, total); // ensure total is not negative
   };
 
-  const totalPrice = computeTotalPrice(product.timeSlots, watch("startTime"), watch("endTime"));
+  const totalPrice = computeTotalPrice(product.timeSlots, watch("startTime"), watch("endTime"), rewards);
 
+  const fetchRewards = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.append("status", "active");
+      params.append("selectedDate", selectedDate);
+
+      const res = await fetch(`/api/rewards?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch rewards");
+      const data = await res.json();
+      console.log(data);
+      setRewards(data);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedDate) {
+      fetchRewards();
+    }
+  }, [selectedDate]);
   // Reset endTime when startTime changes
   useEffect(() => {
     setValue("endTime", "");
@@ -323,7 +358,15 @@ export default function ProductDetail({ product }) {
 
         {
           <div className="flex justify-between items-center mb-2">
-            <p className="text-green-900 text-2xl font-bold">₱{product.timeSlots[0].price}</p>
+            <div className="flex gap-2 items-baseline">
+              <p className="text-green-900 text-2xl font-bold">₱{product.timeSlots[0].price}</p>
+              {rewards.length > 0 && (
+                <p style={{ color: "red", fontWeight: 600 }}>
+                  {rewards[0].discountType === "percentage" ? `${rewards[0].discountValue}%` : rewards[0].discountValue}
+                </p>
+              )}
+            </div>
+
             {product.timeSlots.length > 1 && (
               <button
                 type="button"

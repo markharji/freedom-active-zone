@@ -16,7 +16,7 @@ export default function FacilityDetailPage() {
     try {
       setLoading(true);
       const res = await fetch(`/api/facilities/${facilityID}`); // create this API
-      console.log(res);
+
       if (!res.ok) throw new Error("Failed to fetch facility");
       const data = await res.json();
       setFacility(data);

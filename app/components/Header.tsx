@@ -39,6 +39,11 @@ export default function Header({ fromAdmin = false }) {
             </Link>
           )}
           {fromAdmin && (isLoggedIn || isLoggedStore) && (
+            <Link href={route("/rewards")} className="hover:text-orange-400 transition-colors">
+              Rewards
+            </Link>
+          )}
+          {fromAdmin && (isLoggedIn || isLoggedStore) && (
             <button onClick={logout} className="hover:text-orange-400 transition-colors">
               Logout
             </button>

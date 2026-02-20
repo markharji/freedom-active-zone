@@ -29,6 +29,7 @@ import { Navigation, Thumbs } from "swiper/modules";
 
 // Drag & drop
 import { useDropzone } from "react-dropzone";
+import ImageMarkerModal from "./ImageMarker";
 
 export default function ProductDetailAdmin({ product }) {
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
@@ -53,9 +54,12 @@ export default function ProductDetailAdmin({ product }) {
       description: product.description,
       images: product.images || [],
       timeSlots: product.timeSlots || [{ start: 6, end: 23, price: 0 }],
+      hotspot: product.hotspot || null,
     },
   });
 
+  const [openMarker, setOpenMarker] = useState(false);
+  const watchHotspot = watch("hotspot");
   const watchSport = watch("sport");
   const watchConvertible = watch("convertible");
 
@@ -84,6 +88,7 @@ export default function ProductDetailAdmin({ product }) {
         price: data.price,
         description: data.description,
         timeSlots: data.timeSlots,
+        hotspot: data.hotspot,
       };
 
       const res = await fetch(`/api/facilities/${product._id}`, {
@@ -385,11 +390,24 @@ export default function ProductDetailAdmin({ product }) {
             )}
           />
 
+          <Button variant="contained" component="label" fullWidth sx={{ mt: 2 }} onClick={() => setOpenMarker(true)}>
+            {watchHotspot ? "Update Hotspot" : "Add Hotspot"}
+          </Button>
+          {!!watchHotspot && <p> {JSON.stringify(watchHotspot)}</p>}
+
           <Button type="submit" variant="contained">
             {loading ? <CircularProgress size={24} /> : "Update Facility"}
           </Button>
         </form>
       </div>
+
+      <ImageMarkerModal
+        open={openMarker}
+        onClose={() => setOpenMarker(false)}
+        onSave={(point) => {
+          setValue("hotspot", point);
+        }}
+      />
     </div>
   );
 }

@@ -13,7 +13,7 @@ export default function ApparelDetailPage() {
     console.log(apparelID);
     try {
       const res = await fetch(`/api/apparels/${apparelID}`); // create this API
-      console.log(res);
+
       if (!res.ok) throw new Error("Failed to fetch apparel");
       const data = await res.json();
       setApparel(data);

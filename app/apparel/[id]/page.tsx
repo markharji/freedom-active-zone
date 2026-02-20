@@ -18,7 +18,7 @@ export default function FacilityDetailPage() {
     try {
       setLoading(true);
       const res = await fetch(`/api/apparels/${apparelID}`); // create this API
-      console.log(res);
+
       if (!res.ok) throw new Error("Failed to fetch apparel");
       const data = await res.json();
       setApparel(data);

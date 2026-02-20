@@ -44,7 +44,7 @@ export async function PUT(req, { params }) {
     const data = await req.json();
     console.log("data", data);
 
-    const { name, sport, description, thumbnail, convertible, otherSports, timeSlots } = data;
+    const { name, sport, description, thumbnail, convertible, otherSports, timeSlots, hotspot } = data;
 
     // Required fields
     if (!name || !sport || !description) {
@@ -109,6 +109,7 @@ export async function PUT(req, { params }) {
         convertible: isConvertible,
         otherSports: isConvertible ? validOtherSports : [],
         timeSlots: validTimeSlots,
+        hotspot,
       },
       { new: true },
     );

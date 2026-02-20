@@ -77,8 +77,6 @@ export async function POST(req) {
 
   const formData = await req.formData();
 
-  console.log(formData);
-
   const name = formData.get("name")?.toString().trim();
   const sport = formData.get("sport")?.toString().trim();
   const convertible = formData.get("convertible") === "true";
@@ -92,9 +90,7 @@ export async function POST(req) {
   let timeSlots: { start: number; end: number; price: number }[] = [];
   try {
     const slotsRaw = formData.get("timeSlots")?.toString();
-    console.log(slotsRaw);
     if (slotsRaw) timeSlots = JSON.parse(slotsRaw);
-    console.log(timeSlots);
 
     // Validate each slot
     for (let i = 0; i < timeSlots.length; i++) {
@@ -132,6 +128,23 @@ export async function POST(req) {
     return NextResponse.json({ message: "Please select at least one additional sport" }, { status: 400 });
   }
 
+  // Hotspot
+  let hotspot: { x: number; y: number } | null = null;
+  try {
+    const hotspotRaw = formData.get("hotspot")?.toString();
+    if (hotspotRaw) {
+      const parsed = JSON.parse(hotspotRaw);
+      if (typeof parsed.x === "number" && typeof parsed.y === "number") {
+        hotspot = parsed;
+      } else {
+        throw new Error("Invalid hotspot coordinates");
+      }
+    }
+  } catch (err) {
+    return NextResponse.json({ message: "Invalid hotspot format" }, { status: 400 });
+  }
+
+  // Images
   const images: string[] = [];
   const files = formData.getAll("images");
 
@@ -149,8 +162,6 @@ export async function POST(req) {
     }
   }
 
-  console.log(timeSlots);
-
   const facility = await Facility.create({
     name,
     sport,
@@ -160,6 +171,7 @@ export async function POST(req) {
     images,
     thumbnail: images[0] || "",
     timeSlots,
+    hotspot, // ✅ save hotspot here
   });
 
   return NextResponse.json({ message: "Facility created successfully", facility }, { status: 201 });

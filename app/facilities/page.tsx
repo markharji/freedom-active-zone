@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import ProductCard from "../components/ProductCard";
 import TitlePage from "../components/TitlePage";
 import Filters from "../components/Filters";
-import { Drawer, IconButton, Button } from "@mui/material";
+import { Drawer, Button, Tabs, Tab, Box } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import toast from "react-hot-toast";
 import Loader from "../components/Loader";
+import FloorplanWithHotspot from "../components/FloorplanWithHotspot";
 
 export default function Facilities() {
   const [selectedSports, setSelectedSports] = useState([]);
@@ -16,8 +17,12 @@ export default function Facilities() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+  const [tabValue, setTabValue] = useState(0); // 0 = List View, 1 = Floorplan
+
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
   };
 
   const fetchFacilities = async () => {
@@ -27,11 +32,11 @@ export default function Facilities() {
       params.append("sports", JSON.stringify(selectedSports));
       params.append("prices", JSON.stringify(selectedPrices));
 
-      const res = await fetch(`/api/facilities?${params.toString()}`); // create this API
+      const res = await fetch(`/api/facilities?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch facilities");
       const data = await res.json();
       setFacilities(data);
-    } catch (err) {
+    } catch (err: any) {
       toast.error(err.message);
     } finally {
       setLoading(false);
@@ -75,27 +80,41 @@ export default function Facilities() {
             />
           </Drawer>
 
-          {/* Facilities - Right Column */}
+          {/* Facilities Column */}
           <div className="flex-1 bg-white rounded-2xl shadow-inner p-4">
-            {loading ? (
-              <Loader />
-            ) : facilities.length === 0 ? (
-              <div className="text-center text-gray-500 font-medium py-20">No facilities available.</div>
-            ) : (
-              <div className="flex flex-wrap gap-8 items-center justify-center">
-                {facilities.map((f) => (
-                  <ProductCard
-                    key={f._id}
-                    id={f.id}
-                    name={f.name}
-                    price={f.price}
-                    rating={f.rating}
-                    image={f.thumbnail || f.images[0]}
-                    href={`/facilities/${f._id}`}
-                  />
-                ))}
-              </div>
-            )}
+            {/* Tabs */}
+            <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth">
+              <Tab label="List View" />
+              <Tab label="Floorplan" />
+            </Tabs>
+
+            <Box mt={4}>
+              {loading ? (
+                <Loader />
+              ) : facilities.length === 0 ? (
+                <div className="text-center text-gray-500 font-medium py-20">No facilities available.</div>
+              ) : tabValue === 0 ? (
+                // List View
+                <div className="flex flex-wrap gap-8 items-center justify-center">
+                  {facilities.map((f) => (
+                    <ProductCard
+                      key={f._id}
+                      id={f.id}
+                      name={f.name}
+                      price={f.price}
+                      rating={f.rating}
+                      image={f.thumbnail || f.images[0]}
+                      href={`/facilities/${f._id}`}
+                    />
+                  ))}
+                </div>
+              ) : (
+                // Floorplan View
+                <div className="w-full h-[500px] bg-gray-100 flex items-center justify-center rounded-xl">
+                  <FloorplanWithHotspot facilities={facilities} />
+                </div>
+              )}
+            </Box>
           </div>
         </div>
       </div>

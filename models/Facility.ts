@@ -9,6 +9,14 @@ const TimeSlotSchema = new mongoose.Schema(
   { _id: false }, // optional, avoids creating separate _id for each slot
 );
 
+const HotspotSchema = new mongoose.Schema(
+  {
+    x: { type: Number, required: true, min: 0, max: 100 },
+    y: { type: Number, required: true, min: 0, max: 100 },
+  },
+  { _id: false },
+);
+
 const FacilitySchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
@@ -35,7 +43,7 @@ const FacilitySchema = new mongoose.Schema(
       default: [],
       validate: {
         validator: function (slots) {
-          // Ensure no overlapping slots
+          // Ensure no overlapping slots and valid ranges
           for (let i = 0; i < slots.length; i++) {
             const a = slots[i];
             if (a.start >= a.end || a.start < 6 || a.end > 23) return false;
@@ -50,6 +58,8 @@ const FacilitySchema = new mongoose.Schema(
         message: "Time slots must be valid, within 6–23, and not overlap.",
       },
     },
+
+    hotspot: { type: HotspotSchema, required: false }, // ✅ add hotspot
 
     thumbnail: { type: String },
     rating: { type: Number, default: 0 },
