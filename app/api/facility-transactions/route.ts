@@ -8,7 +8,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 
 dayjs.extend(customParseFormat);
 
-export async function GET(req) {
+export async function GET(req: Request) {
   await dbConnect();
 
   try {
@@ -18,55 +18,58 @@ export async function GET(req) {
     const facilityId = searchParams.get("facilityId");
     const status = searchParams.get("status");
     const dateStr = searchParams.get("date");
-    const userName = searchParams.get("search"); // expected "DD-MM-YYYY"
-    const sport = searchParams.get("sport");
+    const userName = searchParams.get("search"); // optional name search
+    const sport = searchParams.get("sport"); // filter by sport
 
     const filter: any = {};
 
     if (transactionId) filter._id = transactionId;
     if (facilityId) filter.facility = facilityId;
     if (status) filter.status = status;
-    if (userName) {
-      filter.userName = { $regex: userName, $options: "i" };
-    }
-
+    if (userName) filter.userName = { $regex: userName, $options: "i" };
     if (dateStr) {
-      // Parse the string with DD-MM-YYYY format
       const parsedDate = dayjs(dateStr, "DD-MM-YYYY");
       if (!parsedDate.isValid()) {
         return NextResponse.json({ message: "Invalid date format" }, { status: 400 });
       }
-
       filter.date = dateStr;
     }
 
-    const populateOptions: any = { path: "facility" };
+    // Fetch all matching transactions
+    let transactions = await FacilityTransaction.find(filter).populate({ path: "facility" }).lean();
+
     if (sport && sport !== "all") {
-      populateOptions.match = { sport: sport };
+      // Filter transactions: match either facility.sport or convertedTo
+      transactions = transactions.filter((t) => {
+        const facilitySport = t.facility?.sport;
+        const convertedSport = t.convertTo ? t.convertedTo : null;
+        return convertedSport ? convertedSport === sport : facilitySport === sport;
+      });
     }
 
-    let transactions = await FacilityTransaction.find(filter).populate(populateOptions).lean();
-
-    // Remove transactions where populate returned null (facility didn't match sport)
-    if (populateOptions.match) {
-      transactions = transactions.filter((t) => t.facility !== null);
-    }
+    // Include convertedTo in the response explicitly (already in the schema)
+    // No additional modification needed; it’s part of each transaction object
 
     return NextResponse.json(transactions);
   } catch (err) {
     return NextResponse.json({ message: err.message }, { status: 500 });
   }
 }
-
 export async function POST(req: Request) {
   await dbConnect();
 
   try {
     const data = await req.json();
-    const { facilityId, name, email, contact, date, startTime, endTime, price } = data;
+    const { facilityId, name, email, contact, date, startTime, endTime, price, convertTo, convertedTo } = data;
 
-    if (!facilityId || !name || !email || !contact || !date || !startTime || !endTime || !price) {
+    // Basic required validation
+    if (!facilityId || !email || !contact || !date || !startTime || !endTime || !price) {
       return NextResponse.json({ message: "All fields are required" }, { status: 400 });
+    }
+
+    // If convertTo is true, convertedTo must be provided
+    if (convertTo && !convertedTo) {
+      return NextResponse.json({ message: "Please select a sport to convert to" }, { status: 400 });
     }
 
     // Get facility
@@ -74,28 +77,19 @@ export async function POST(req: Request) {
     if (!facility) return NextResponse.json({ message: "Facility not found" }, { status: 404 });
 
     // --- Check for overlapping transactions ---
-    // Convert startTime and endTime to numbers for comparison (HH:mm → minutes since midnight)
-    const [startHour, startMinute] = startTime.split(":").map(Number);
-    const [endHour, endMinute] = endTime.split(":").map(Number);
-    const newStart = startHour * 60 + startMinute;
-    const newEnd = endHour * 60 + endMinute;
-
     const overlapping = await FacilityTransaction.findOne({
       facility: facilityId,
       date,
       $or: [
         {
-          // New start is during existing booking
           startTime: { $lte: startTime },
           endTime: { $gt: startTime },
         },
         {
-          // New end is during existing booking
           startTime: { $lt: endTime },
           endTime: { $gte: endTime },
         },
         {
-          // New booking completely covers existing booking
           startTime: { $gte: startTime },
           endTime: { $lte: endTime },
         },
@@ -104,20 +98,21 @@ export async function POST(req: Request) {
 
     if (overlapping) {
       return NextResponse.json(
-        { message: "Time slot overlaps with an existing booking. Please select a new Date" },
+        { message: "Time slot overlaps with an existing booking. Please select a new time" },
         { status: 400 },
       );
     }
 
     // --- Create transaction ---
     const transaction = await FacilityTransaction.create({
-      userName: name,
       userEmail: email,
       userContact: contact,
       date,
       startTime,
       endTime,
-      price: price,
+      price,
+      convertTo: !!convertTo,
+      convertedTo: convertTo ? convertedTo : "",
       status: "pending",
       facility,
     });
@@ -128,34 +123,34 @@ export async function POST(req: Request) {
   }
 }
 
-// PATCH → update transaction status
+// ---------------------- PATCH ----------------------
 export async function PATCH(req: Request) {
   await dbConnect();
 
   try {
     const data = await req.json();
-    const { transactionId, status } = data;
+    const { transactionId, status, convertTo, convertedTo } = data;
 
-    if (!transactionId || !status) {
-      return NextResponse.json({ message: "Transaction ID and status are required" }, { status: 400 });
+    if (!transactionId) {
+      return NextResponse.json({ message: "Transaction ID is required" }, { status: 400 });
     }
 
-    console.log(transactionId, status);
-    // Only allow certain status updates
     const allowedStatuses = ["pending", "confirmed", "cancelled"];
-    if (!allowedStatuses.includes(status)) {
+    if (status && !allowedStatuses.includes(status)) {
       return NextResponse.json({ message: "Invalid status" }, { status: 400 });
     }
 
     const transaction = await FacilityTransaction.findById(transactionId);
-    if (!transaction) {
-      return NextResponse.json({ message: "Transaction not found" }, { status: 404 });
-    }
+    if (!transaction) return NextResponse.json({ message: "Transaction not found" }, { status: 404 });
 
-    transaction.status = status;
+    // Update fields if provided
+    if (status) transaction.status = status;
+    if (typeof convertTo === "boolean") transaction.convertTo = convertTo;
+    if (convertTo && convertedTo) transaction.convertedTo = convertedTo;
+
     await transaction.save();
 
-    return NextResponse.json({ message: `Transaction status updated to ${status}`, transaction });
+    return NextResponse.json({ message: "Transaction updated", transaction });
   } catch (err) {
     return NextResponse.json({ message: err.message }, { status: 500 });
   }

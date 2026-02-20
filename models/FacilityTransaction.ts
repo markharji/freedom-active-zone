@@ -7,13 +7,14 @@ const facilityTransactionSchema = new Schema(
       ref: "Facility",
       required: true,
     },
-    userName: { type: String, required: true },
     userEmail: { type: String, required: true },
     userContact: { type: String, required: true },
     date: { type: String, required: true },
     startTime: { type: String, required: true }, // e.g., "10:00"
     endTime: { type: String, required: true }, // e.g., "12:00"
     price: { type: Number, required: true },
+    convertTo: { type: Boolean, default: false },
+    convertedTo: { type: String, default: "" },
     status: {
       type: String,
       enum: ["pending", "confirmed", "cancelled"],

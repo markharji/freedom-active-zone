@@ -13,10 +13,14 @@ import {
   Select,
   Paper,
   CircularProgress,
+  Switch,
+  FormControlLabel,
+  IconButton,
 } from "@mui/material";
 import toast from "react-hot-toast";
+import CloseIcon from "@mui/icons-material/Close";
 
-// Swiper for images
+// Swiper
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
@@ -30,22 +34,32 @@ export default function ProductDetailAdmin({ product }) {
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
   const [previewImages, setPreviewImages] = useState(product.images || []);
   const [loading, setLoading] = useState(false);
+
+  const sportsOptions = ["Basketball", "Pickleball", "Tennis", "Volleyball", "Badminton"];
+
   const {
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
       name: product.name,
       sport: product.sport,
+      convertible: product.convertible || false,
+      otherSports: product.otherSports || [],
       price: product.price,
       description: product.description,
       images: product.images || [],
+      timeSlots: product.timeSlots || [{ start: 6, end: 23, price: 0 }],
     },
   });
 
-  // Dropzone for uploading images
+  const watchSport = watch("sport");
+  const watchConvertible = watch("convertible");
+
+  // Dropzone
   const { getRootProps, getInputProps } = useDropzone({
     accept: { "image/*": [] },
     onDrop: (acceptedFiles) => {
@@ -57,25 +71,34 @@ export default function ProductDetailAdmin({ product }) {
     },
   });
 
-  // PUT request to update facility
+  // PUT update
   const onUpdate = async (data) => {
     try {
       setLoading(true);
-      delete data.images;
+
+      const payload = {
+        name: data.name,
+        sport: data.sport,
+        convertible: data.convertible,
+        otherSports: data.convertible ? data.otherSports : [],
+        price: data.price,
+        description: data.description,
+        timeSlots: data.timeSlots,
+      };
+
       const res = await fetch(`/api/facilities/${product._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       const result = await res.json();
-
       if (!res.ok) throw new Error(result.message || "Failed to update facility");
 
       toast.success("Facility updated successfully!");
-      setLoading(false);
     } catch (err) {
       toast.error(err.message || "Update failed");
+    } finally {
       setLoading(false);
     }
   };
@@ -86,7 +109,7 @@ export default function ProductDetailAdmin({ product }) {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-2 gap-8 shadow-md bg-white rounded-lg">
-      {/* Left: Swiper Images */}
+      {/* LEFT SIDE - IMAGES */}
       <div>
         <Swiper
           spaceBetween={10}
@@ -127,7 +150,6 @@ export default function ProductDetailAdmin({ product }) {
           ))}
         </Swiper>
 
-        {/* Dropzone */}
         <Paper
           {...getRootProps()}
           sx={{
@@ -143,13 +165,14 @@ export default function ProductDetailAdmin({ product }) {
         </Paper>
       </div>
 
-      {/* Right: Admin Form */}
+      {/* RIGHT SIDE - FORM */}
       <div>
         <Typography variant="h4" fontWeight="bold" mb={4}>
           Edit Facility
         </Typography>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          {/* Name */}
           <Controller
             name="name"
             control={control}
@@ -159,6 +182,7 @@ export default function ProductDetailAdmin({ product }) {
             )}
           />
 
+          {/* Main Sport */}
           <Controller
             name="sport"
             control={control}
@@ -167,20 +191,73 @@ export default function ProductDetailAdmin({ product }) {
               <FormControl fullWidth error={!!errors.sport}>
                 <InputLabel>Sport</InputLabel>
                 <Select {...field} label="Sport">
-                  <MenuItem value="Basketball">Basketball</MenuItem>
-                  <MenuItem value="Pickleball">Pickleball</MenuItem>
-                  <MenuItem value="Tennis">Tennis</MenuItem>
+                  {sportsOptions.map((sport) => (
+                    <MenuItem key={sport} value={sport}>
+                      {sport}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             )}
           />
 
+          {/* Convertible Switch */}
           <Controller
+            name="convertible"
+            control={control}
+            render={({ field }) => (
+              <FormControlLabel
+                control={
+                  <Switch
+                    {...field}
+                    checked={field.value}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      field.onChange(checked);
+
+                      if (!checked) {
+                        setValue("otherSports", []);
+                      }
+                    }}
+                  />
+                }
+                label="Convertible"
+              />
+            )}
+          />
+
+          {/* Multi Select Sports */}
+          {watchConvertible && (
+            <Controller
+              name="otherSports"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth>
+                  <InputLabel>Other Supported Sports</InputLabel>
+                  <Select {...field} multiple label="Other Supported Sports">
+                    {sportsOptions
+                      .filter((sport) => sport !== watchSport)
+                      .map((sport) => (
+                        <MenuItem key={sport} value={sport}>
+                          {sport}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                </FormControl>
+              )}
+            />
+          )}
+
+          {/* Price */}
+          {/* <Controller
             name="price"
             control={control}
             rules={{
               required: "Price is required",
-              min: { value: 0, message: "Price cannot be negative" },
+              min: {
+                value: 0,
+                message: "Price cannot be negative",
+              },
             }}
             render={({ field }) => (
               <TextField
@@ -192,8 +269,105 @@ export default function ProductDetailAdmin({ product }) {
                 helperText={errors.price?.message}
               />
             )}
-          />
+          /> */}
 
+          <Box mt={2}>
+            <Typography variant="subtitle1" fontWeight="bold">
+              Prices
+            </Typography>
+
+            {(watch("timeSlots") || []).map((slot, index) => (
+              <Paper key={index} sx={{ p: 2, mt: 1, display: "flex", gap: 1, alignItems: "center" }} elevation={1}>
+                {/* Start Hour Dropdown */}
+                <TextField
+                  label="Start Hour"
+                  select
+                  value={slot.start}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    const updated = [...watch("timeSlots")];
+                    updated[index].start = value;
+                    setValue("timeSlots", updated);
+                  }}
+                  sx={{ flex: 1 }}
+                  required
+                >
+                  {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
+                    <MenuItem key={hour} value={hour}>
+                      {hour}:00
+                    </MenuItem>
+                  ))}
+                </TextField>
+
+                {/* End Hour Dropdown */}
+                <TextField
+                  label="End Hour"
+                  select
+                  value={slot.end}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    const updated = [...watch("timeSlots")];
+                    updated[index].end = value;
+                    setValue("timeSlots", updated);
+                  }}
+                  sx={{ flex: 1 }}
+                  required
+                >
+                  {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
+                    <MenuItem key={hour} value={hour}>
+                      {hour}:00
+                    </MenuItem>
+                  ))}
+                </TextField>
+
+                {/* Price */}
+                <TextField
+                  label="Price"
+                  type="number"
+                  value={slot.price}
+                  onChange={(e) => {
+                    const updated = [...watch("timeSlots")];
+                    updated[index].price = Number(e.target.value);
+                    setValue("timeSlots", updated);
+                  }}
+                  sx={{ width: 100 }}
+                  required
+                />
+
+                {/* Remove Slot */}
+                <IconButton
+                  color="error"
+                  disabled={watch("timeSlots").length === 1} // prevent removing last slot
+                  onClick={() => {
+                    const updated = watch("timeSlots").filter((_, i) => i !== index);
+                    setValue("timeSlots", updated);
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Paper>
+            ))}
+
+            {/* Error if no slots */}
+            {(!watch("timeSlots") || watch("timeSlots").length === 0) && (
+              <Typography color="error" variant="body2">
+                At least one time slot is required
+              </Typography>
+            )}
+
+            <Button
+              variant="outlined"
+              fullWidth
+              sx={{ mt: 1 }}
+              onClick={() => {
+                setValue("timeSlots", [...(watch("timeSlots") || []), { start: 6, end: 7, price: 0 }]);
+              }}
+            >
+              Add Time Slot
+            </Button>
+          </Box>
+
+          {/* Description */}
           <Controller
             name="description"
             control={control}
@@ -211,8 +385,8 @@ export default function ProductDetailAdmin({ product }) {
             )}
           />
 
-          <Button type="submit" variant="contained" color="primary">
-            {loading ? <CircularProgress /> : "Update Facility"}
+          <Button type="submit" variant="contained">
+            {loading ? <CircularProgress size={24} /> : "Update Facility"}
           </Button>
         </form>
       </div>

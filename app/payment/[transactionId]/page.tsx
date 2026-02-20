@@ -128,10 +128,6 @@ export default function Facilities() {
           {/* User Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h3 className="font-semibold text-gray-700">Name</h3>
-              <p className="text-gray-800">{transaction.userName}</p>
-            </div>
-            <div>
               <h3 className="font-semibold text-gray-700">Email</h3>
               <p className="text-gray-800">{transaction.userEmail}</p>
             </div>
@@ -146,35 +142,51 @@ export default function Facilities() {
           </div>
 
           {/* Booking Info */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 ">
             <div>
               <h3 className="font-semibold text-gray-700">Date</h3>
               <p className="text-gray-800">{transaction.date}</p>
             </div>
-            <div>
-              <h3 className="font-semibold text-gray-700">Start Time</h3>
-              <p className="text-gray-800">{transaction.startTime}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-700">End Time</h3>
-              <p className="text-gray-800">{transaction.endTime}</p>
+            <div className="flex gap-8">
+              <div>
+                <h3 className="font-semibold text-gray-700">Start Time</h3>
+                <p className="text-gray-800">{transaction.startTime}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-700">End Time</h3>
+                <p className="text-gray-800">{transaction.endTime}</p>
+              </div>
             </div>
           </div>
 
           {/* Facility Info */}
-          <div className="space-y-2">
-            <h3 className="font-semibold text-gray-700">Facility</h3>
-            <p className="text-gray-800">{transaction.facility.name}</p>
-            <p className="text-gray-600 italic">
-              {transaction.facility.sport} - {transaction.facility.description}
-            </p>
-            <p className="text-gray-800 font-semibold">Price: ₱{transaction.price}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2">
+            <div className="space-y-2">
+              <h3 className="font-semibold text-gray-700">Facility</h3>
+              <p className="text-gray-800">{transaction.facility.name}</p>
 
-            {/* Images */}
-            <div className="flex space-x-2 overflow-x-auto pt-2">
-              {transaction.facility.images.map((img, i) => (
-                <img key={i} src={img} alt={transaction.facility.name} className="h-24 w-32 object-cover rounded-lg" />
-              ))}
+              <p className="text-gray-600 italic">
+                {transaction.facility.sport} - {transaction.facility.description}
+              </p>
+              <p className="text-gray-800 font-semibold">Price: ₱{transaction.price}</p>
+
+              {/* Images */}
+              <div className="flex space-x-2 overflow-x-auto pt-2">
+                {transaction.facility.images.map((img, i) => (
+                  <img
+                    key={i}
+                    src={img}
+                    alt={transaction.facility.name}
+                    className="h-24 w-32 object-cover rounded-lg"
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="mt-2 md:mt-0 ">
+              <h3 className="font-semibold text-gray-700">Converted To</h3>
+              <p className="text-white bg-blue-500 w-fit p-2 px-4 rounded-4xl font-semibold">
+                {transaction.convertedTo}
+              </p>
             </div>
           </div>
         </div>

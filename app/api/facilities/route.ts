@@ -49,7 +49,9 @@ export async function GET(req) {
   const limit = limitParam ? parseInt(limitParam) : null;
   const filter: any = {};
 
-  if (sports.length > 0) filter.sport = { $in: sports };
+  if (sports.length > 0) {
+    filter.$or = [{ sport: { $in: sports } }, { otherSports: { $elemMatch: { $in: sports } } }];
+  }
   if (prices.length > 0) filter.price = { $lte: Math.max(...prices.map((p: string) => parseInt(p))) };
 
   let query = Facility.find(filter);
@@ -65,50 +67,99 @@ export async function POST(req) {
   await dbConnect();
 
   const token = req.cookies.get("token")?.value;
-  if (!token) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  if (!token) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
   try {
     jwt.verify(token, JWT_SECRET);
   } catch (e) {
-    console.log(e);
     return NextResponse.json({ message: "Invalid token" }, { status: 401 });
   }
 
   const formData = await req.formData();
 
-  const name = formData.get("name");
-  const sport = formData.get("sport");
-  const price = Number(formData.get("price"));
-  const description = formData.get("description");
+  console.log(formData);
 
-  if (!name || !sport || !price || !description) {
-    return NextResponse.json({ message: "All fields are required" }, { status: 400 });
+  const name = formData.get("name")?.toString().trim();
+  const sport = formData.get("sport")?.toString().trim();
+  const convertible = formData.get("convertible") === "true";
+  const description = formData.get("description")?.toString().trim();
+
+  // Other sports
+  const otherSportsRaw = formData.getAll("otherSports");
+  const otherSports = otherSportsRaw.map((s) => s.toString());
+
+  // Time slots (JSON string)
+  let timeSlots: { start: number; end: number; price: number }[] = [];
+  try {
+    const slotsRaw = formData.get("timeSlots")?.toString();
+    console.log(slotsRaw);
+    if (slotsRaw) timeSlots = JSON.parse(slotsRaw);
+    console.log(timeSlots);
+
+    // Validate each slot
+    for (let i = 0; i < timeSlots.length; i++) {
+      const slot = timeSlots[i];
+      if (
+        slot.start == null ||
+        slot.end == null ||
+        slot.price == null ||
+        slot.start < 6 ||
+        slot.end > 23 ||
+        slot.start >= slot.end ||
+        slot.price < 0
+      ) {
+        throw new Error(`Invalid time slot at index ${i + 1}`);
+      }
+
+      // Check overlap
+      for (let j = i + 1; j < timeSlots.length; j++) {
+        const other = timeSlots[j];
+        if (!(slot.end <= other.start || slot.start >= other.end)) {
+          throw new Error(`Time slot ${i + 1} overlaps with slot ${j + 1}`);
+        }
+      }
+    }
+  } catch (err) {
+    return NextResponse.json({ message: err.message || "Invalid time slots" }, { status: 400 });
+  }
+
+  // Basic validation
+  if (!name || !sport || description === undefined) {
+    return NextResponse.json({ message: "All required fields must be provided" }, { status: 400 });
+  }
+
+  if (convertible && otherSports.length === 0) {
+    return NextResponse.json({ message: "Please select at least one additional sport" }, { status: 400 });
   }
 
   const images: string[] = [];
+  const files = formData.getAll("images");
 
-  const files = formData.getAll("images"); // IMPORTANT
   for (const file of files) {
     if (file instanceof File && file.size > 0) {
       const buffer = Buffer.from(await file.arrayBuffer());
+
       const url = await uploadToPinata({
         buffer,
         originalname: file.name,
         type: file.type,
       });
+
       images.push(url);
     }
   }
 
+  console.log(timeSlots);
+
   const facility = await Facility.create({
     name,
     sport,
-    price,
+    convertible,
+    otherSports: convertible ? otherSports : [],
     description,
     images,
     thumbnail: images[0] || "",
+    timeSlots,
   });
 
   return NextResponse.json({ message: "Facility created successfully", facility }, { status: 201 });

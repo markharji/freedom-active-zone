@@ -17,6 +17,8 @@ import {
   DialogActions,
   Typography,
   CircularProgress,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -54,6 +56,7 @@ export default function ProductDetail({ product }) {
   const [openConfirm, setOpenConfirm] = useState(false);
   const [referenceId, setReferenceId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showSlots, setShowSlots] = useState(true);
 
   const {
     handleSubmit,
@@ -65,6 +68,8 @@ export default function ProductDetail({ product }) {
     defaultValues: {
       name: "",
       email: "",
+      convertTo: false,
+      convertedTo: "",
       contact: "",
       date: null,
       startTime: "",
@@ -72,16 +77,57 @@ export default function ProductDetail({ product }) {
     },
   });
 
+  const watchConvertible = watch("convertTo");
   const selectedDate = watch("date");
   const startTime = watch("startTime");
-  const hours = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, "0")}:00`);
+
+  // Only allow operating hours 06:00 to 23:00
+  const hours = Array.from({ length: 18 }, (_, i) => `${(i + 6).toString().padStart(2, "0")}:00`); // 06:00 to 23:00
   const totalHours =
     startTime && watch("endTime") ? parseInt(watch("endTime").split(":")[0]) - parseInt(startTime.split(":")[0]) : 0;
-  const totalPrice = totalHours * product.price;
 
+  const computeTotalPrice = (timeSlots, startTime, endTime) => {
+    if (!timeSlots || timeSlots.length === 0) return 0;
+    if (timeSlots.length === 1) {
+      const slot = timeSlots[0];
+      const hours = parseInt(endTime.split(":")[0]) - parseInt(startTime.split(":")[0]);
+      return slot.price * hours;
+    }
+
+    // Multiple time slots
+    const startHour = parseInt(startTime.split(":")[0]);
+    const endHour = parseInt(endTime.split(":")[0]);
+
+    let total = 0;
+
+    for (const slot of timeSlots) {
+      // If slot is completely outside the selected range, skip
+      if (slot.end <= startHour || slot.start >= endHour) continue;
+
+      // Compute overlapping hours
+      const overlapStart = Math.max(slot.start, startHour);
+      const overlapEnd = Math.min(slot.end, endHour);
+      const hours = overlapEnd - overlapStart;
+
+      total += hours * slot.price;
+    }
+
+    return total;
+  };
+
+  const totalPrice = computeTotalPrice(product.timeSlots, watch("startTime"), watch("endTime"));
+
+  // Reset endTime when startTime changes
   useEffect(() => {
     setValue("endTime", "");
   }, [startTime, setValue]);
+
+  // Reset convertedTo when switch is turned off
+  useEffect(() => {
+    if (!watchConvertible) {
+      setValue("convertedTo", "");
+    }
+  }, [watchConvertible, setValue]);
 
   // Fetch transactions
   useEffect(() => {
@@ -95,7 +141,7 @@ export default function ProductDetail({ product }) {
       try {
         const dateString = selectedDate.format("DD-MM-YYYY");
         const res = await fetch(
-          `/api/facility-transactions?facilityId=${product._id}&date=${dateString}&status=pending`,
+          `/api/facility-transactions?facilityId=${product._id}&date=${dateString}&status=confirmed`,
         );
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Failed to fetch transactions");
@@ -139,7 +185,6 @@ export default function ProductDetail({ product }) {
     const intentData = await createRes.json();
     const paymentIntentId = intentData.data.id;
 
-    // 2️⃣ Confirm Payment Intent with GCash phone number
     const confirmRes = await fetch("/api/payment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -153,9 +198,7 @@ export default function ProductDetail({ product }) {
     });
 
     const confirmData = await confirmRes.json();
-    console.log(confirmData.data);
     const redirectUrl = confirmData.data.attributes.next_action.redirect.url;
-    // 3️⃣ Redirect user to PayMongo checkout in new tab
     if (redirectUrl) {
       window.open(redirectUrl, "_self")?.focus();
     } else {
@@ -278,11 +321,64 @@ export default function ProductDetail({ product }) {
           )}
         </div>
 
-        <p className="text-green-900 text-2xl font-bold mb-4">₱{product.price}</p>
+        {
+          <div className="flex justify-between items-center mb-2">
+            <p className="text-green-900 text-2xl font-bold">₱{product.timeSlots[0].price}</p>
+            {product.timeSlots.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setShowSlots(!showSlots)}
+                className="text-green-900 font-semibold hover:underline text-sm"
+              >
+                {showSlots ? "Hide Prices" : "Show Prices"}
+              </button>
+            )}
+          </div>
+        }
+
+        {showSlots && product.timeSlots && product.timeSlots.length > 1 && (
+          <div className="mb-6">
+            <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm bg-white">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-green-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+                    >
+                      Start
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+                    >
+                      End
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+                    >
+                      Price
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {product.timeSlots.map((slot, index) => (
+                    <tr key={index} className="hover:bg-green-50 transition-colors duration-200">
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-700 font-medium">{slot.start}:00</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-700 font-medium">{slot.end}:00</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-green-900 font-bold">₱{slot.price}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(handlePreview)} className="flex flex-col gap-4 mb-4 md:w-full">
           {/* Name */}
-          <Controller
+          {/* <Controller
             name="name"
             control={control}
             rules={{ required: "Customer Name is required" }}
@@ -295,7 +391,7 @@ export default function ProductDetail({ product }) {
                 fullWidth
               />
             )}
-          />
+          /> */}
 
           {/* Email */}
           <Controller
@@ -309,6 +405,49 @@ export default function ProductDetail({ product }) {
               <TextField {...field} label="Email" error={!!errors.email} helperText={errors.email?.message} fullWidth />
             )}
           />
+
+          {/* Convert Switch */}
+          {product?.convertible && (
+            <Controller
+              name="convertTo"
+              control={control}
+              render={({ field }) => (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      {...field}
+                      checked={!!field.value}
+                      onChange={(e) => field.onChange(e.target.checked)}
+                      color="success"
+                    />
+                  }
+                  label="Convert to another sport?"
+                />
+              )}
+            />
+          )}
+
+          {/* Converted Sport Select */}
+          {product?.convertible && watchConvertible && (
+            <Controller
+              name="convertedTo"
+              control={control}
+              rules={{ required: "Please select a sport" }}
+              render={({ field }) => (
+                <FormControl fullWidth error={!!errors.convertedTo}>
+                  <InputLabel id="converted-to-label">Select Sport</InputLabel>
+                  <Select {...field} labelId="converted-to-label" label="Select Sport">
+                    {product?.otherSports?.map((sport, index) => (
+                      <MenuItem key={index} value={sport}>
+                        {sport}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {errors.convertedTo && <FormHelperText>{errors.convertedTo.message}</FormHelperText>}
+                </FormControl>
+              )}
+            />
+          )}
 
           {/* Contact */}
           <Controller
@@ -329,7 +468,7 @@ export default function ProductDetail({ product }) {
             )}
           />
 
-          {/* Date */}
+          {/* Date and Time Pickers */}
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <Controller
               name="date"
@@ -339,6 +478,8 @@ export default function ProductDetail({ product }) {
                 <DatePicker
                   {...field}
                   label="Date"
+                  minDate={dayjs()} // Today
+                  maxDate={dayjs().add(1, "month")} // One month from today
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) => field.onChange(date)}
                   slotProps={{ textField: { error: !!errors.date, helperText: errors.date?.message, fullWidth: true } }}
@@ -415,30 +556,6 @@ export default function ProductDetail({ product }) {
           <Button type="submit" variant="contained" fullWidth sx={{ mt: 3 }} disabled={loading}>
             {loading ? <CircularProgress size={24} color="inherit" /> : "Book Now"}
           </Button>
-
-          <Button
-            type="button"
-            variant="outlined"
-            fullWidth
-            onClick={handleSuggestSlots}
-            className="mt-2"
-            disabled={loadingSlots || !selectedDate}
-          >
-            {loadingSlots ? "Checking..." : "View Available Slots"}
-          </Button>
-
-          {suggestedSlots.length > 0 && (
-            <Box className="mt-4 p-4 border border-gray-300 rounded-md bg-gray-50">
-              <h3 className="text-lg font-semibold mb-2">Available Slots:</h3>
-              <ul className="list-disc list-inside">
-                {suggestedSlots.map((slot, i) => (
-                  <li key={i}>
-                    {slot.startTime} - {slot.endTime}
-                  </li>
-                ))}
-              </ul>
-            </Box>
-          )}
         </form>
 
         {/* Preview Modal */}
@@ -457,19 +574,22 @@ export default function ProductDetail({ product }) {
           </Box>
           <DialogContent dividers sx={{ px: 3, py: 2 }}>
             <Box sx={{ display: "grid", gap: 2 }}>
-              {/* Existing Booking Details */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <InfoIcon sx={{ color: "#1f7a49" }} />
-                <Typography>
-                  <strong>Name:</strong> {formDataPreview?.name}
-                </Typography>
-              </Box>
+              {/* Booking Details */}
+
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <EmailIcon sx={{ color: "#1f7a49" }} />
                 <Typography>
                   <strong>Email:</strong> {formDataPreview?.email}
                 </Typography>
               </Box>
+              {product?.convertible && formDataPreview?.convertTo && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <InfoIcon sx={{ color: "#1f7a49" }} />
+                  <Typography>
+                    <strong>Converted Sport:</strong> {formDataPreview?.convertedTo}
+                  </Typography>
+                </Box>
+              )}
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <PhoneIcon sx={{ color: "#1f7a49" }} />
                 <Typography>
@@ -491,11 +611,11 @@ export default function ProductDetail({ product }) {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <AttachMoneyIcon sx={{ color: "#1f7a49" }} />
                 <Typography>
-                  <strong>Total Price:</strong> ₱{totalHours * product.price}
+                  <strong>Total Price:</strong> ₱{totalPrice}
                 </Typography>
               </Box>
 
-              {/* --- PAYMENT METHOD SELECTOR --- */}
+              {/* Payment Method */}
               <FormControl fullWidth sx={{ mt: 2 }}>
                 <InputLabel id="preview-payment-method-label" className="bg-white">
                   Payment Method
@@ -524,81 +644,12 @@ export default function ProductDetail({ product }) {
             <Button
               onClick={async () => {
                 setOpenPreview(false);
-                await onSubmit(formDataPreview); // paymentMethod is now included
+                await onSubmit(formDataPreview);
               }}
               variant="contained"
               sx={{ bgcolor: "#1f7a49", color: "white", borderRadius: 2, "&:hover": { bgcolor: "#14532d" } }}
             >
               Confirm Booking
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Confirmation Modal */}
-        <Dialog
-          open={openConfirm}
-          onClose={() => setOpenConfirm(false)}
-          PaperProps={{ sx: { borderRadius: 3, minWidth: 340, maxWidth: 500, bgcolor: "#f9f9f9", boxShadow: 8 } }}
-        >
-          <Box sx={{ bgcolor: "#1f7a49", color: "white", py: 2, px: 3, borderRadius: "8px 8px 0 0" }}>
-            <Typography variant="h6" fontWeight="bold">
-              Booking Confirmed!
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              Your booking has been successfully submitted.
-            </Typography>
-          </Box>
-          <DialogContent dividers sx={{ px: 3, py: 2 }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                bgcolor: "#e6f4ea",
-                px: 2,
-                py: 1.5,
-                borderRadius: 2,
-                border: "1px solid #c1e1c1",
-                mb: 2,
-                flexDirection: "column",
-              }}
-            >
-              <Typography sx={{ fontWeight: "bold", color: "#1f7a49" }}>{referenceId}</Typography>
-              <Button
-                onClick={() => navigator.clipboard.writeText(referenceId)}
-                variant="contained"
-                sx={{
-                  bgcolor: "#1f7a49",
-                  color: "white",
-                  "&:hover": { bgcolor: "#14532d" },
-                  borderRadius: 2,
-                  textTransform: "none",
-                  fontSize: "0.875rem",
-                }}
-              >
-                Copy
-              </Button>
-            </Box>
-            <Typography variant="body2" color="textSecondary">
-              Please take a screenshot or note this reference number for your records.
-            </Typography>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, py: 2, justifyContent: "center" }}>
-            <Button
-              onClick={() => setOpenConfirm(false)}
-              variant="contained"
-              sx={{
-                bgcolor: "#1f7a49",
-                color: "white",
-                borderRadius: 2,
-                "&:hover": { bgcolor: "#14532d" },
-                px: 4,
-                py: 1.5,
-                textTransform: "none",
-                fontWeight: "bold",
-              }}
-            >
-              Close
             </Button>
           </DialogActions>
         </Dialog>

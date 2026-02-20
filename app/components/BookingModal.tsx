@@ -47,7 +47,36 @@ export default function BookingModal({ open, onClose, slot, loading, fetchFacili
   const hours = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, "0")}:00`);
   const totalHours =
     startTime && watch("endTime") ? parseInt(watch("endTime").split(":")[0]) - parseInt(startTime.split(":")[0]) : 0;
-  const totalPrice = totalHours * slot?.facility?.price;
+  const computeTotalPrice = (timeSlots, startTime, endTime) => {
+    if (!timeSlots || timeSlots.length === 0) return 0;
+    if (timeSlots.length === 1) {
+      const slot = timeSlots[0];
+      const hours = parseInt(endTime.split(":")[0]) - parseInt(startTime.split(":")[0]);
+      return slot.price * hours;
+    }
+
+    // Multiple time slots
+    const startHour = parseInt(startTime.split(":")[0]);
+    const endHour = parseInt(endTime.split(":")[0]);
+
+    let total = 0;
+
+    for (const slot of timeSlots) {
+      // If slot is completely outside the selected range, skip
+      if (slot.end <= startHour || slot.start >= endHour) continue;
+
+      // Compute overlapping hours
+      const overlapStart = Math.max(slot.start, startHour);
+      const overlapEnd = Math.min(slot.end, endHour);
+      const hours = overlapEnd - overlapStart;
+
+      total += hours * slot.price;
+    }
+
+    return total;
+  };
+
+  const totalPrice = computeTotalPrice(slot?.facility.timeSlots, watch("startTime"), watch("endTime"));
 
   useEffect(() => {
     if (slot?.start) setValue("date", dayjs(slot.start));
@@ -108,20 +137,6 @@ export default function BookingModal({ open, onClose, slot, loading, fetchFacili
       <DialogContent dividers sx={{ px: 3, py: 2 }}>
         <form id="bookingForm" onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col gap-4">
           {/* Name */}
-          <Controller
-            name="name"
-            control={control}
-            rules={{ required: "Customer Name is required" }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Customer Name"
-                error={!!errors.name}
-                helperText={errors.name?.message}
-                fullWidth
-              />
-            )}
-          />
 
           {/* Email */}
           <Controller
@@ -165,6 +180,8 @@ export default function BookingModal({ open, onClose, slot, loading, fetchFacili
                 <DatePicker
                   {...field}
                   label="Date"
+                  minDate={dayjs()} // Today
+                  maxDate={dayjs().add(1, "month")} // One month from today
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) => field.onChange(date)}
                   slotProps={{ textField: { error: !!errors.date, helperText: errors.date?.message, fullWidth: true } }}

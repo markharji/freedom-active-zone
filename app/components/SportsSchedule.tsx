@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Calendar, momentLocalizer, Views } from "react-big-calendar";
+import { useState, useEffect, useCallback } from "react";
+import { Calendar, momentLocalizer, Views, Navigate } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { Modal, Box, Typography, Divider, Button, IconButton, Tabs, Tab } from "@mui/material";
@@ -10,12 +10,63 @@ import BookingModal from "./BookingModal";
 const localizer = momentLocalizer(moment);
 
 const minTime = new Date();
-minTime.setHours(7, 0, 0, 0);
+minTime.setHours(6, 0, 0, 0);
 
 const maxTime = new Date();
 maxTime.setHours(23, 0, 0, 0);
 
-export default function SportsSchedule() {
+// Outside of SportsSchedule
+const CustomToolbar = ({ toolbar, selectedTab, setSelectedTab }) => {
+  const goToBack = () => toolbar.onNavigate("PREV");
+  const goToNext = () => toolbar.onNavigate(Navigate.NEXT);
+  const goToToday = () => toolbar.onNavigate(Navigate.TODAY);
+
+  return (
+    <div className="flex flex-col gap-4 mb-4">
+      <div className="flex flex-col md:flex-row items-center justify-between">
+        <Tabs
+          className="max-w-full"
+          value={selectedTab}
+          onChange={(e, newValue) => setSelectedTab(newValue)}
+          textColor="primary"
+          indicatorColor="primary"
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+        >
+          <Tab label="All Sports" />
+          <Tab label="Basketball" />
+          <Tab label="Pickleball" />
+        </Tabs>
+
+        <div className="text-lg font-semibold text-gray-700">{toolbar.label}</div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={goToBack}
+            className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 hover:shadow-sm transition duration-300"
+          >
+            Back
+          </button>
+          <button
+            onClick={goToToday}
+            className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 hover:shadow-sm transition duration-300"
+          >
+            Today
+          </button>
+          <button
+            onClick={goToNext}
+            className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 hover:shadow-sm transition duration-300"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default function SportsSchedule({ section }) {
   const [facilityTransactions, setFacilityTransactions] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedTab, setSelectedTab] = useState(0);
@@ -68,19 +119,18 @@ export default function SportsSchedule() {
       if (!res.ok) throw new Error("Failed to fetch facility transactions");
       const data = await res.json();
 
-      // Map transactions to calendar events
       const events = data.map((tx) => {
         const [day, month, year] = tx.date.split("-");
         const [startHour, startMinute] = tx.startTime.split(":");
         const [endHour, endMinute] = tx.endTime.split(":");
 
         return {
-          id: tx._id,
-          title: tx.facility.name,
+          id: tx?._id,
+          title: tx.facility?.name,
           start: new Date(+year, +month - 1, +day, +startHour, +startMinute),
           end: new Date(+year, +month - 1, +day, +endHour, +endMinute),
           resourceId: tx.facility._id,
-          facilityName: tx.facility.name,
+          facilityName: tx.facility?.name,
           facilityPrice: tx.facility.price,
           description: tx.facility.description,
           price: tx.price,
@@ -98,57 +148,6 @@ export default function SportsSchedule() {
       setLoading(false);
       toast.error(err.message);
     }
-  };
-
-  // Custom toolbar with tabs and navigation
-  const CustomToolbar = (toolbar) => {
-    const goToBack = () => toolbar.onNavigate("PREV");
-    const goToNext = () => toolbar.onNavigate("NEXT");
-    const goToToday = () => toolbar.onNavigate("TODAY");
-
-    return (
-      <div className="flex flex-col gap-4 mb-4">
-        <div className="flex flex-col md:flex-row items-center justify-between">
-          <Tabs
-            className="max-w-full"
-            value={selectedTab}
-            onChange={(e, newValue) => setSelectedTab(newValue)}
-            textColor="primary"
-            indicatorColor="primary"
-            variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
-          >
-            <Tab label="All Sports" />
-            <Tab label="Basketball" />
-            <Tab label="Pickleball" />
-          </Tabs>
-
-          <div className="text-lg font-semibold text-gray-700">{toolbar.label}</div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={goToBack}
-              className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 hover:shadow-sm transition duration-300"
-            >
-              Back
-            </button>
-            <button
-              onClick={goToToday}
-              className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 hover:shadow-sm transition duration-300"
-            >
-              Today
-            </button>
-            <button
-              onClick={goToNext}
-              className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 hover:shadow-sm transition duration-300"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   const ResourceHeader = ({ label }) => (
@@ -201,8 +200,8 @@ export default function SportsSchedule() {
         events={facilityTransactions}
         resources={
           facilities?.map((res) => ({
-            resourceId: res._id,
-            resourceTitle: res.name,
+            resourceId: res?._id,
+            resourceTitle: res?.name,
           })) || []
         }
         resourceIdAccessor="resourceId"
@@ -232,10 +231,16 @@ export default function SportsSchedule() {
         }}
         components={{
           resourceHeader: ResourceHeader,
-          toolbar: CustomToolbar,
+          toolbar: (toolbarProps) => (
+            <CustomToolbar
+              toolbar={toolbarProps}
+              selectedTab={selectedTab}
+              setSelectedTab={setSelectedTab}
+              key={`${selectedTab}-${section}`}
+            />
+          ),
           event: ({ event }) => (
             <div className="flex flex-col">
-              <p className="truncate text-[12px]">Name: {event.userName}</p>
               <p className="truncate text-[12px]">Email: {event.userEmail}</p>
             </div>
           ),
@@ -256,7 +261,7 @@ export default function SportsSchedule() {
         }}
       />
 
-      {/* Modal */}
+      {/* Event Details Modal */}
       <Modal
         open={!!selectedEvent}
         onClose={handleClose}
@@ -318,12 +323,14 @@ export default function SportsSchedule() {
         </Box>
       </Modal>
 
+      {/* Booking Modal */}
       <BookingModal
         fetchFacilityTransactions={fetchFacilityTransactions}
         open={openBooking}
         onClose={() => setOpenBooking(false)}
         slot={selectedSlot}
         loading={loading}
+        onSubmit={handleSubmitBooking}
       />
     </div>
   );
