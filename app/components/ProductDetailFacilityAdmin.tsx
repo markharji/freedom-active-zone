@@ -393,7 +393,6 @@ export default function ProductDetailAdmin({ product }) {
           <Button variant="contained" component="label" fullWidth sx={{ mt: 2 }} onClick={() => setOpenMarker(true)}>
             {watchHotspot ? "Update Hotspot" : "Add Hotspot"}
           </Button>
-          {!!watchHotspot && <p> {JSON.stringify(watchHotspot)}</p>}
 
           <Button type="submit" variant="contained">
             {loading ? <CircularProgress size={24} /> : "Update Facility"}
@@ -407,6 +406,7 @@ export default function ProductDetailAdmin({ product }) {
         onSave={(point) => {
           setValue("hotspot", point);
         }}
+        defaultPoints={product.hotspot}
       />
     </div>
   );

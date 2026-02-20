@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Modal, Box, Typography, IconButton, Button } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
-export default function ImageMarkerModal({ open, onClose, onSave }) {
+export default function ImageMarkerModal({ open, onClose, onSave, defaultPoints = [] }) {
   const imgRef = useRef(null);
   const [points, setPoints] = useState([]); // multiple points for polygon
   const [polygonFinalized, setPolygonFinalized] = useState(false);
@@ -19,6 +19,10 @@ export default function ImageMarkerModal({ open, onClose, onSave }) {
 
     setPoints([...points, { x, y }]);
   };
+
+  useEffect(() => {
+    setPoints(defaultPoints);
+  }, []);
 
   // Clear all points
   const handleClear = () => {

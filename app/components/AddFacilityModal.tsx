@@ -327,7 +327,6 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
             <Button variant="contained" component="label" fullWidth sx={{ mt: 2 }} onClick={() => setOpenMarker(true)}>
               {watchHotspot ? "Update Hotspot" : "Add Hotspot"}
             </Button>
-            <p> {JSON.stringify(watchHotspot)}</p>
 
             <Button variant="contained" component="label" fullWidth sx={{ mt: 2 }}>
               Upload Images
