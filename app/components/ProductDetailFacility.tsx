@@ -340,7 +340,7 @@ export default function ProductDetail({ product }) {
       {/* Right: Booking Form */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold mb-2">{product.name}</h1>
-
+        <p className="font-semibold text-gray-500">{product.sport}</p>
         <div className="mb-4">
           <p className={`text-gray-700 text-sm md:text-base ${!showFullDesc ? "line-clamp-3" : ""}`}>
             {product.description}

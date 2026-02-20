@@ -8,13 +8,11 @@ export default function ProductCard({ id, name, price, rating, image, href }) {
       <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
         {/* Responsive Thumbnail */}
         <div className="w-full h-64 overflow-hidden">
-          {image && (
-            <img
-              src={image}
-              alt={name}
-              className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-            />
-          )}
+          <img
+            src={image}
+            alt={name}
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+          />
         </div>
 
         {/* Product Info */}

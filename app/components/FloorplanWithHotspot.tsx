@@ -13,11 +13,11 @@ export default function FloorplanWithHotspot({ facilities }) {
 
   console.log(facilities);
   return (
-    <Box sx={{ width: "100%", maxWidth: 700, mx: "auto", position: "relative" }}>
+    <Box sx={{ width: "100%", maxWidth: 1200, mx: "auto", position: "relative" }}>
       <img ref={imgRef} src="/freedom.jpg" alt="Freedom" style={{ width: "100%", borderRadius: 8, display: "block" }} />
 
       {facilities?.length > 0 &&
-        facilities.map(({ hotspot, _id }) => {
+        facilities.map(({ hotspot, _id, name }) => {
           return hotspot ? (
             <Link
               key={_id}
@@ -35,10 +35,10 @@ export default function FloorplanWithHotspot({ facilities }) {
                 cursor: "pointer",
                 boxShadow: "0 0 6px rgba(0,0,0,0.4)",
               }}
-              title="Click hotspot"
+              title={name}
             />
           ) : (
-            <></>
+            <p key={_id}></p>
           );
         })}
     </Box>

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Loader from "./components/Loader";
 import Testimonials from "./components/Testimonials";
+import FloorplanWithHotspot from "./components/FloorplanWithHotspot";
 
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false);
@@ -132,7 +133,7 @@ export default function Home() {
       </section>
 
       {/* Gallery Section */}
-      <section id="apparel" className="py-20 px-6 bg-white text-center">
+      {/* <section id="apparel" className="py-20 px-6 bg-white text-center">
         <h2 className="text-4xl font-bold text-gray-900 mb-12">Apparels & Courts</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {loading ? (
@@ -183,8 +184,12 @@ export default function Home() {
             ))
           )}
         </div>
-      </section>
+      </section> */}
 
+      <section id="floorplan" className="py-4 px-2 bg-white text-center mb-4">
+        <h2 className="text-4xl font-bold text-gray-900 mb-8">Book Courts Now</h2>
+        <FloorplanWithHotspot facilities={facilities} />
+      </section>
       {/* Contact Section */}
       <section className="bg-gray-900 py-20 text-gray-200 mb-8">
         <div className="max-w-6xl mx-auto px-6 text-center md:text-left">
