@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
       paymentMethod,
       phone,
       payment_method_allowed,
+      dateRange = null,
     } = body;
 
     // -----------------------
@@ -126,6 +127,72 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (action === "get_all_payments") {
+      let url = "https://api.paymongo.com/v1/payments?limit=100";
+      if (dateRange) {
+        // dateRange format: "2026-02-01..2026-02-20"
+        url += `&created_at.between=${dateRange}`;
+      }
+
+      const headers = {
+        Authorization: `Basic ${Buffer.from(PAYMONGO_SECRET_KEY + ":").toString("base64")}`,
+        accept: "application/json",
+      };
+
+      const options = {
+        method: "GET",
+        headers,
+      };
+
+      const payments = await fetch(url, options);
+
+      const data = await payments.json();
+
+      return NextResponse.json({
+        payments: data,
+      });
+    }
+
+    if (action === "get_metrics") {
+      const url = `https://api.paymongo.com/v1/payments?limit=100`;
+
+      const headers = {
+        Authorization: `Basic ${Buffer.from(PAYMONGO_SECRET_KEY + ":").toString("base64")}`,
+        Accept: "application/json",
+      };
+
+      const response = await fetch(url, { method: "GET", headers });
+
+      const result = await response.json();
+      const payments = result?.data || [];
+
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      const currentMonthPayments = payments.filter((p: any) => {
+        const createdAt = new Date(p.attributes.created_at * 1000);
+        return createdAt.getMonth() === currentMonth && createdAt.getFullYear() === currentYear;
+      });
+
+      // Current month metrics
+      const totalTransactionsCurrentMonth = currentMonthPayments.length;
+      const totalRevenueCurrentMonth =
+        currentMonthPayments.reduce((sum: number, p: any) => sum + p.attributes.amount, 0) / 100;
+
+      // All-time metrics
+      const totalTransactionsAllTime = payments.length;
+      const totalRevenueAllTime = payments.reduce((sum: number, p: any) => sum + p.attributes.amount, 0) / 100;
+
+      return NextResponse.json({
+        metrics: {
+          total_transactions_current_month: totalTransactionsCurrentMonth,
+          total_revenue_current_month: totalRevenueCurrentMonth,
+          total_transactions_all_time: totalTransactionsAllTime,
+          total_revenue_all_time: totalRevenueAllTime,
+        },
+      });
+    }
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (err: any) {
     console.error(err);

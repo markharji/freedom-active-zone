@@ -7,6 +7,7 @@ import SportsSchedule from "@/app/components/SportsSchedule";
 import TabsWrapper from "@/app/components/TabsWrapper";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
+import ReportsPage from "@/app/components/Reports";
 
 export default function AdminHomePage() {
   const [activeSection, setActiveSection] = useState(1); // 0 = Transactions, 1 = Schedules
@@ -24,7 +25,7 @@ export default function AdminHomePage() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-16 left-0 h-screen w-64 bg-white shadow-xl flex flex-col z-50 transform transition-transform duration-300
+        className={`fixed mt-2 top-16 left-0 h-screen w-64 bg-white shadow-xl flex flex-col z-50 transform transition-transform duration-300
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
         <div className="px-6">
@@ -53,6 +54,14 @@ export default function AdminHomePage() {
             >
               Transactions
             </button>
+            <button
+              onClick={() => setActiveSection(2)}
+              className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
+                activeSection === 2 ? "bg-[#101727] text-white shadow-md" : "text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Reports
+            </button>
           </div>
         </div>
 
@@ -63,7 +72,7 @@ export default function AdminHomePage() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 md:ml-64 p-6 overflow-auto">
+      <main className="flex-1 md:ml-64 p-6 pl-0 overflow-auto">
         {/* Mobile menu button */}
         <div className="md:hidden mb-4">
           <button className="p-2 rounded-md bg-gray-200 hover:bg-gray-300" onClick={() => setSidebarOpen(true)}>
@@ -90,6 +99,12 @@ export default function AdminHomePage() {
         <div className={`${activeSection === 1 ? "block" : "hidden"} mt-4 bg-white rounded-xl shadow p-4`}>
           <SportsSchedule section={activeSection} />
         </div>
+
+        {activeSection === 2 && (
+          <div>
+            <ReportsPage />
+          </div>
+        )}
       </main>
     </div>
   );
