@@ -33,8 +33,6 @@ export async function GET(req: any) {
       filter.date = dateStr;
     }
 
-    console.log(filter);
-
     const transactions = await ApparelTransaction.find(filter).populate("apparel");
 
     return NextResponse.json(transactions);

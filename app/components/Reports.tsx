@@ -46,7 +46,7 @@ export default function ReportsPage() {
       });
 
       const data = await res.json();
-      console.log(data?.payments?.data);
+
       setPayments(data?.payments?.data || []);
     } catch (error) {
       console.error(error);

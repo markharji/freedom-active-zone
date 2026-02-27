@@ -13,8 +13,7 @@ const facilityTransactionSchema = new Schema(
     startTime: { type: String, required: true }, // e.g., "10:00"
     endTime: { type: String, required: true }, // e.g., "12:00"
     price: { type: Number, required: true },
-    convertTo: { type: Boolean, default: false },
-    convertedTo: { type: String, default: "" },
+    sport: { type: String },
     status: {
       type: String,
       enum: ["pending", "confirmed", "cancelled"],

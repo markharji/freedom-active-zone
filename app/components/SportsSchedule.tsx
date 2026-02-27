@@ -82,10 +82,13 @@ export default function SportsSchedule({ section }) {
   const handleClose = () => setSelectedEvent(null);
 
   // Fetch data whenever selectedTab changes
+
   useEffect(() => {
-    fetchFacilities();
-    fetchFacilityTransactions();
-  }, [selectedTab]);
+    if (section === 1) {
+      fetchFacilities();
+      fetchFacilityTransactions();
+    }
+  }, [selectedTab, section]);
 
   // Fetch facilities
   const fetchFacilities = async () => {
@@ -138,7 +141,9 @@ export default function SportsSchedule({ section }) {
           userName: tx.userName,
           userEmail: tx.userEmail,
           userContact: tx.userContact,
-          sport: tx.facility.sport,
+          sport: tx.sport,
+          facilitySport: tx.facility.sport,
+          convertible: tx.facility.convertible,
         };
       });
 
@@ -298,6 +303,9 @@ export default function SportsSchedule({ section }) {
           </Typography>
           <Typography variant="body2" color="text.secondary">
             <strong>Contact:</strong> {selectedEvent?.userContact}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            <strong>Sport:</strong> {selectedEvent?.sport}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             <strong>Start:</strong> {selectedEvent?.start.toLocaleString()}

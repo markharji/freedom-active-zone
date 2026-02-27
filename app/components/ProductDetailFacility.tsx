@@ -19,6 +19,7 @@ import {
   CircularProgress,
   Switch,
   FormControlLabel,
+  OutlinedInput,
 } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -69,16 +70,14 @@ export default function ProductDetail({ product }) {
     defaultValues: {
       name: "",
       email: "",
-      convertTo: false,
-      convertedTo: "",
       contact: "",
       date: null,
       startTime: "",
       endTime: "",
+      sport: "",
     },
   });
 
-  const watchConvertible = watch("convertTo");
   const selectedDate = watch("date");
   const startTime = watch("startTime");
 
@@ -138,7 +137,7 @@ export default function ProductDetail({ product }) {
       const res = await fetch(`/api/rewards?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch rewards");
       const data = await res.json();
-      console.log(data);
+
       setRewards(data);
     } catch (err: any) {
       toast.error(err.message);
@@ -156,13 +155,6 @@ export default function ProductDetail({ product }) {
   useEffect(() => {
     setValue("endTime", "");
   }, [startTime, setValue]);
-
-  // Reset convertedTo when switch is turned off
-  useEffect(() => {
-    if (!watchConvertible) {
-      setValue("convertedTo", "");
-    }
-  }, [watchConvertible, setValue]);
 
   // Fetch transactions
   useEffect(() => {
@@ -227,7 +219,7 @@ export default function ProductDetail({ product }) {
         action: "create_payment_method",
         paymentIntentId,
         paymentMethod: "gcash",
-        phone: data.contact,
+        phone: data.gcashNumber,
         transactionId: transaction._id,
       }),
     });
@@ -275,6 +267,7 @@ export default function ProductDetail({ product }) {
         facility: product,
         facilityId: product._id,
         price: totalPrice,
+        sport: product?.convertible ? data.sport : product.sport,
       };
 
       const res = await fetch("/api/facility-transactions", {
@@ -449,44 +442,23 @@ export default function ProductDetail({ product }) {
             )}
           />
 
-          {/* Convert Switch */}
+          {/* Converted Sport Select */}
           {product?.convertible && (
             <Controller
-              name="convertTo"
-              control={control}
-              render={({ field }) => (
-                <FormControlLabel
-                  control={
-                    <Switch
-                      {...field}
-                      checked={!!field.value}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                      color="success"
-                    />
-                  }
-                  label="Convert to another sport?"
-                />
-              )}
-            />
-          )}
-
-          {/* Converted Sport Select */}
-          {product?.convertible && watchConvertible && (
-            <Controller
-              name="convertedTo"
+              name="sport"
               control={control}
               rules={{ required: "Please select a sport" }}
               render={({ field }) => (
-                <FormControl fullWidth error={!!errors.convertedTo}>
+                <FormControl fullWidth error={!!errors.sport}>
                   <InputLabel id="converted-to-label">Select Sport</InputLabel>
                   <Select {...field} labelId="converted-to-label" label="Select Sport">
-                    {product?.otherSports?.map((sport, index) => (
+                    {(product?.otherSports || []).concat([product.sport])?.map((sport, index) => (
                       <MenuItem key={index} value={sport}>
                         {sport}
                       </MenuItem>
                     ))}
                   </Select>
-                  {errors.convertedTo && <FormHelperText>{errors.convertedTo.message}</FormHelperText>}
+                  {errors.sport && <FormHelperText>{errors.sport.message}</FormHelperText>}
                 </FormControl>
               )}
             />
@@ -625,14 +597,14 @@ export default function ProductDetail({ product }) {
                   <strong>Email:</strong> {formDataPreview?.email}
                 </Typography>
               </Box>
-              {product?.convertible && formDataPreview?.convertTo && (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <InfoIcon sx={{ color: "#1f7a49" }} />
-                  <Typography>
-                    <strong>Converted Sport:</strong> {formDataPreview?.convertedTo}
-                  </Typography>
-                </Box>
-              )}
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <InfoIcon sx={{ color: "#1f7a49" }} />
+                <Typography>
+                  <strong>Chosen Sport:</strong> {product?.convertible ? formDataPreview?.sport : product.sport}
+                </Typography>
+              </Box>
+
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <PhoneIcon sx={{ color: "#1f7a49" }} />
                 <Typography>
@@ -668,11 +640,32 @@ export default function ProductDetail({ product }) {
                   value={formDataPreview?.paymentMethod || "card"}
                   onChange={(e) => setFormDataPreview({ ...formDataPreview, paymentMethod: e.target.value })}
                 >
-                  <MenuItem value="card">Card</MenuItem>
+                  {/* <MenuItem value="card">Card</MenuItem> */}
                   <MenuItem value="gcash">GCash</MenuItem>
-                  <MenuItem value="grab_pay">GrabPay</MenuItem>
+                  {/* <MenuItem value="grab_pay">GrabPay</MenuItem> */}
                 </Select>
               </FormControl>
+
+              {formDataPreview?.paymentMethod === "gcash" && (
+                <FormControl fullWidth>
+                  <InputLabel htmlFor="gcash-number" className="bg-white">
+                    GCash Number
+                  </InputLabel>
+                  <OutlinedInput
+                    id="gcash-number"
+                    type="tel"
+                    label="GCash Number"
+                    inputProps={{ maxLength: 11 }}
+                    value={formDataPreview?.gcashNumber || ""}
+                    onChange={(e) =>
+                      setFormDataPreview({
+                        ...formDataPreview,
+                        gcashNumber: e.target.value,
+                      })
+                    }
+                  />
+                </FormControl>
+              )}
             </Box>
           </DialogContent>
 

@@ -33,12 +33,12 @@ async function uploadToPinata(file) {
   }
 
   const data = JSON.parse(text);
-  console.log(data);
+
   return `https://${process.env.PINATA_GATEWAY}/ipfs/${data.data.cid}?pinataGatewayToken=${process.env.PINATA_GATEWAY_TOKEN}`;
 }
 
 // GET → list all facilities
-export async function GET(req) {
+export async function GET(req: Request) {
   await dbConnect();
 
   const { searchParams } = new URL(req.url);
@@ -47,21 +47,33 @@ export async function GET(req) {
   const sports = JSON.parse(searchParams.get("sports") || "[]");
   const limitParam = searchParams.get("limit");
   const limit = limitParam ? parseInt(limitParam) : null;
+
   const filter: any = {};
 
+  // 🔹 Filter by sport or convertible sport
   if (sports.length > 0) {
     filter.$or = [{ sport: { $in: sports } }, { otherSports: { $elemMatch: { $in: sports } } }];
   }
-  if (prices.length > 0) filter.price = { $lte: Math.max(...prices.map((p: string) => parseInt(p))) };
+
+  // 🔹 Filter by ANY timeslot with price <= selected max price
+  if (prices.length > 0) {
+    const maxPrice = Math.max(...prices.map((p: string) => parseInt(p)));
+
+    filter.timeSlots = {
+      $elemMatch: {
+        price: { $lte: maxPrice },
+      },
+    };
+  }
 
   let query = Facility.find(filter);
+
   if (limit) query = query.limit(limit);
 
   const facilities = await query;
 
   return NextResponse.json(facilities);
 }
-
 // POST → create a new facility with multiple images
 export async function POST(req) {
   await dbConnect();

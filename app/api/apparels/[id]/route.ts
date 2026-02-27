@@ -43,8 +43,6 @@ export async function PUT(req, { params }) {
   try {
     const data = await req.json();
 
-    console.log("data", data);
-
     // Validate required fields if needed
     const { name, sport, price, description, thumbnail } = data;
     if (!name || !sport || !price || !description) {

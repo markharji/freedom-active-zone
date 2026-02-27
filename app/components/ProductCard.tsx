@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-export default function ProductCard({ id, name, price, rating, image, href }) {
+export default function ProductCard({ id, name, price, rating, image, href, timeSlots = [] }) {
   return (
     <Link href={href || `/product/${id}`} className="block w-[320px]">
       <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
@@ -18,8 +18,13 @@ export default function ProductCard({ id, name, price, rating, image, href }) {
         {/* Product Info */}
         <div className="p-4">
           <h3 className="text-lg font-semibold mb-2">{name}</h3>
-          <p className="text-orange-500 font-bold mb-2">₱{price}</p>
-          <div className="flex items-center">
+          <p className="mb-2">
+            {timeSlots.length > 1 && <span className="text-sm text-gray-500 font-semibold mr-1">Starting at </span>}
+            <span className="text-orange-600 font-extrabold text-lg" style={{ color: "orange" }}>
+              ₱{timeSlots[0] ? timeSlots[0].price : ""}
+            </span>
+          </p>
+          {/* <div className="flex items-center">
             {Array.from({ length: 5 }).map((_, i) => (
               <svg
                 key={i}
@@ -31,7 +36,7 @@ export default function ProductCard({ id, name, price, rating, image, href }) {
               </svg>
             ))}
             <span className="ml-2 text-gray-600 text-sm">{rating.toFixed(1)}</span>
-          </div>
+          </div> */}
         </div>
       </div>
     </Link>

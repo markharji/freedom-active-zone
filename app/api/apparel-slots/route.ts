@@ -32,8 +32,6 @@ export async function GET(req: Request) {
       status: "pending",
     }).sort("startTime");
 
-    console.log(transactions);
-
     const dayStart = dayjs(`${dateStr} 00:00`, "DD-MM-YYYY HH:mm");
     const dayEnd = dayjs(`${dateStr} 23:00`, "DD-MM-YYYY HH:mm");
 
@@ -41,15 +39,9 @@ export async function GET(req: Request) {
     const freeSlots: { startTime: string; endTime: string }[] = [];
 
     for (const t of transactions) {
-      console.log(`${dateStr} ${t.startTime}`);
-      console.log(`${dateStr} ${t.endTime}`);
-
       const bookingStart = dayjs(`${dateStr} ${t.startTime}`, "DD-MM-YYYY HH:mm");
       const bookingEnd = dayjs(`${dateStr} ${t.endTime}`, "DD-MM-YYYY HH:mm");
 
-      console.log(dateStr);
-      console.log(bookingStart.format("DD-MM-YYYY HH:mm"));
-      console.log(bookingEnd.format("DD-MM-YYYY HH:mm"));
       // Free slot BEFORE this booking
       if (cursor.isBefore(bookingStart)) {
         freeSlots.push({

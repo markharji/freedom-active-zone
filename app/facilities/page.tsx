@@ -101,7 +101,7 @@ export default function Facilities() {
                       key={f._id}
                       id={f.id}
                       name={f.name}
-                      price={f.price}
+                      timeSlots={f.timeSlots}
                       rating={f.rating}
                       image={f.thumbnail || f.images[0]}
                       href={`/facilities/${f._id}`}

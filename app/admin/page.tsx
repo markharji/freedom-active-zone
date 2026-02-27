@@ -63,7 +63,6 @@ export default function Admin() {
   /* REGISTER SUBMIT */
   const onRegister = async (data) => {
     setLoading(true);
-    console.log("REGISTER USER:", data);
 
     try {
       const response = await axios.put("/api/users", data);

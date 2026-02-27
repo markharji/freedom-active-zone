@@ -144,7 +144,7 @@ export default function FacilityTransactionsTable() {
     { name: "Email", selector: (row: any) => row.userEmail, sortable: true },
     { name: "Contact", selector: (row: any) => row.userContact },
     { name: "Facility", selector: (row: any) => row.facility?.name },
-    { name: "Convert To", selector: (row: any) => (row.convertTo ? row.convertedTo : "-") },
+    { name: "Sport", selector: (row: any) => row.sport },
     { name: "Date", selector: (row: any) => row.date },
     { name: "Start Time", selector: (row: any) => row.startTime },
     { name: "End Time", selector: (row: any) => row.endTime },
@@ -217,12 +217,8 @@ export default function FacilityTransactionsTable() {
                 { label: "Contact", value: selectedTransaction.userContact },
                 { label: "Facility", value: selectedTransaction.facility?.name },
                 {
-                  label: "Converted To",
-                  value: selectedTransaction.convertTo ? (
-                    <p className="rounded-2xl bg-gray-700 px-4 text-white">{selectedTransaction.convertedTo}</p>
-                  ) : (
-                    "-"
-                  ),
+                  label: "Sport",
+                  value: selectedTransaction.sport,
                 },
                 { label: "Date", value: selectedTransaction.date },
                 { label: "Time", value: `${selectedTransaction.startTime} - ${selectedTransaction.endTime}` },

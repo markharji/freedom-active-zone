@@ -13,7 +13,7 @@ export async function GET(req, { params }) {
 
   try {
     const facility = await Facility.findById(id);
-    console.log(facility);
+
     if (!facility) {
       return NextResponse.json({ message: "Facility not found" }, { status: 404 });
     }
@@ -42,7 +42,6 @@ export async function PUT(req, { params }) {
 
   try {
     const data = await req.json();
-    console.log("data", data);
 
     const { name, sport, description, thumbnail, convertible, otherSports, timeSlots, hotspot } = data;
 

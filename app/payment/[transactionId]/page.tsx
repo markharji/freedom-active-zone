@@ -183,10 +183,8 @@ export default function Facilities() {
               </div>
             </div>
             <div className="mt-2 md:mt-0 ">
-              <h3 className="font-semibold text-gray-700">Converted To</h3>
-              <p className="text-white bg-blue-500 w-fit p-2 px-4 rounded-4xl font-semibold">
-                {transaction.convertedTo}
-              </p>
+              <h3 className="font-semibold text-gray-700">Sport</h3>
+              <p className="text-white bg-blue-500 w-fit p-2 px-4 rounded-4xl font-semibold">{transaction.sport}</p>
             </div>
           </div>
         </div>

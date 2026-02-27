@@ -10,7 +10,6 @@ export default function ApparelDetailPage() {
   const [apparel, setApparel] = useState(null);
 
   const fetchApparel = async (apparelID) => {
-    console.log(apparelID);
     try {
       const res = await fetch(`/api/apparels/${apparelID}`); // create this API
 

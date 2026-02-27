@@ -39,6 +39,7 @@ export default function BookingModal({ open, onClose, slot, loading, fetchFacili
       date: slot?.start ? dayjs(slot.start) : null,
       startTime: slot?.start ? dayjs(slot.start).format("HH:00") : "",
       endTime: slot?.end ? dayjs(slot.end).format("HH:00") : "",
+      sport: "",
     },
   });
 
@@ -205,6 +206,27 @@ export default function BookingModal({ open, onClose, slot, loading, fetchFacili
               />
             )}
           />
+
+          {slot?.facility?.convertible && (
+            <Controller
+              name="sport"
+              control={control}
+              rules={{ required: "Please select a sport" }}
+              render={({ field }) => (
+                <FormControl fullWidth error={!!errors.sport}>
+                  <InputLabel id="converted-to-label">Select Sport</InputLabel>
+                  <Select {...field} labelId="converted-to-label" label="Select Sport">
+                    {(slot?.facility?.otherSports || []).concat([slot?.facility?.sport])?.map((sport, index) => (
+                      <MenuItem key={index} value={sport}>
+                        {sport}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {errors.sport && <FormHelperText>{errors.sport.message}</FormHelperText>}
+                </FormControl>
+              )}
+            />
+          )}
 
           {/* Date */}
           <LocalizationProvider dateAdapter={AdapterDayjs}>

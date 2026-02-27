@@ -119,7 +119,7 @@ export default function AdminFacilities() {
                       key={f._id}
                       id={f.id}
                       name={f.name}
-                      price={f.price}
+                      timeSlots={f.timeSlots}
                       rating={f.rating}
                       image={f.thumbnail || f.images[0]}
                       href={`/admin/facilities/${f._id}`}

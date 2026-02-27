@@ -26,6 +26,7 @@ export async function GET(req: Request) {
     if (transactionId) filter._id = transactionId;
     if (facilityId) filter.facility = facilityId;
     if (status) filter.status = status;
+    if (sport && sport !== "all") filter.sport = sport;
     if (userName) filter.userName = { $regex: userName, $options: "i" };
     if (dateStr) {
       const parsedDate = dayjs(dateStr, "DD-MM-YYYY");
@@ -36,19 +37,10 @@ export async function GET(req: Request) {
     }
 
     // Fetch all matching transactions
-    let transactions = await FacilityTransaction.find(filter).populate({ path: "facility" }).lean();
-
-    if (sport && sport !== "all") {
-      // Filter transactions: match either facility.sport or convertedTo
-      transactions = transactions.filter((t) => {
-        const facilitySport = t.facility?.sport;
-        const convertedSport = t.convertTo ? t.convertedTo : null;
-        return convertedSport ? convertedSport === sport : facilitySport === sport;
-      });
-    }
-
-    // Include convertedTo in the response explicitly (already in the schema)
-    // No additional modification needed; it’s part of each transaction object
+    let transactions = await FacilityTransaction.find(filter)
+      .populate({ path: "facility" })
+      .sort({ date: 1, startTime: 1 })
+      .lean();
 
     return NextResponse.json(transactions);
   } catch (err) {
@@ -60,16 +52,11 @@ export async function POST(req: Request) {
 
   try {
     const data = await req.json();
-    const { facilityId, name, email, contact, date, startTime, endTime, price, convertTo, convertedTo } = data;
+    const { facilityId, sport, email, contact, date, startTime, endTime, price } = data;
 
     // Basic required validation
     if (!facilityId || !email || !contact || !date || !startTime || !endTime || !price) {
       return NextResponse.json({ message: "All fields are required" }, { status: 400 });
-    }
-
-    // If convertTo is true, convertedTo must be provided
-    if (convertTo && !convertedTo) {
-      return NextResponse.json({ message: "Please select a sport to convert to" }, { status: 400 });
     }
 
     // Get facility
@@ -111,8 +98,7 @@ export async function POST(req: Request) {
       startTime,
       endTime,
       price,
-      convertTo: !!convertTo,
-      convertedTo: convertTo ? convertedTo : "",
+      sport,
       status: "pending",
       facility,
     });
@@ -129,7 +115,7 @@ export async function PATCH(req: Request) {
 
   try {
     const data = await req.json();
-    const { transactionId, status, convertTo, convertedTo } = data;
+    const { transactionId, status } = data;
 
     if (!transactionId) {
       return NextResponse.json({ message: "Transaction ID is required" }, { status: 400 });
@@ -145,8 +131,6 @@ export async function PATCH(req: Request) {
 
     // Update fields if provided
     if (status) transaction.status = status;
-    if (typeof convertTo === "boolean") transaction.convertTo = convertTo;
-    if (convertTo && convertedTo) transaction.convertedTo = convertedTo;
 
     await transaction.save();
 
