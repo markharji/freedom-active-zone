@@ -58,7 +58,26 @@ const FacilitySchema = new mongoose.Schema(
         message: "Time slots must be valid, within 6–23, and not overlap.",
       },
     },
+    weekendTimeSlots: {
+      type: [TimeSlotSchema],
+      default: [],
+      validate: {
+        validator: function (slots) {
+          // Ensure no overlapping slots and valid ranges
+          for (let i = 0; i < slots.length; i++) {
+            const a = slots[i];
+            if (a.start >= a.end || a.start < 6 || a.end > 23) return false;
 
+            for (let j = i + 1; j < slots.length; j++) {
+              const b = slots[j];
+              if (!(a.end <= b.start || a.start >= b.end)) return false;
+            }
+          }
+          return true;
+        },
+        message: "Time slots must be valid, within 6–23, and not overlap.",
+      },
+    },
     hotspot: { type: [HotspotSchema], required: false }, // ✅ add hotspot
 
     thumbnail: { type: String },

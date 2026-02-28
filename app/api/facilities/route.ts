@@ -131,6 +131,38 @@ export async function POST(req) {
     return NextResponse.json({ message: err.message || "Invalid time slots" }, { status: 400 });
   }
 
+  let weekendTimeSlots: { start: number; end: number; price: number }[] = [];
+  try {
+    const weekendSlotsRaw = formData.get("weekendTimeSlots")?.toString();
+    if (weekendSlotsRaw) weekendTimeSlots = JSON.parse(weekendSlotsRaw);
+
+    // Validate each slot
+    for (let i = 0; i < weekendTimeSlots.length; i++) {
+      const weekendSlot = weekendTimeSlots[i];
+      if (
+        weekendSlot.start == null ||
+        weekendSlot.end == null ||
+        weekendSlot.price == null ||
+        weekendSlot.start < 6 ||
+        weekendSlot.end > 23 ||
+        weekendSlot.start >= weekendSlot.end ||
+        weekendSlot.price < 0
+      ) {
+        throw new Error(`Invalid time weekendSlot at index ${i + 1}`);
+      }
+
+      // Check overlap
+      for (let j = i + 1; j < weekendTimeSlots.length; j++) {
+        const other = weekendTimeSlots[j];
+        if (!(weekendSlot.end <= other.start || weekendSlot.start >= other.end)) {
+          throw new Error(`Time weekend Slot ${i + 1} overlaps with weekend Slot ${j + 1}`);
+        }
+      }
+    }
+  } catch (err) {
+    return NextResponse.json({ message: err.message || "Invalid time slots" }, { status: 400 });
+  }
+
   // Basic validation
   if (!name || !sport || description === undefined) {
     return NextResponse.json({ message: "All required fields must be provided" }, { status: 400 });
@@ -146,7 +178,7 @@ export async function POST(req) {
     const hotspotRaw = formData.get("hotspot")?.toString();
     if (hotspotRaw) {
       const parsed = JSON.parse(hotspotRaw);
-      if (typeof parsed.x === "number" && typeof parsed.y === "number") {
+      if (typeof parsed[0].x === "number" && typeof parsed[0].y === "number") {
         hotspot = parsed;
       } else {
         throw new Error("Invalid hotspot coordinates");
@@ -183,6 +215,7 @@ export async function POST(req) {
     images,
     thumbnail: images[0] || "",
     timeSlots,
+    weekendTimeSlots,
     hotspot, // ✅ save hotspot here
   });
 

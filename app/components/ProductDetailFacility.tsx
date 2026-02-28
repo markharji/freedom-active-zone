@@ -125,7 +125,13 @@ export default function ProductDetail({ product }) {
     return Math.max(0, total); // ensure total is not negative
   };
 
-  const totalPrice = computeTotalPrice(product.timeSlots, watch("startTime"), watch("endTime"), rewards);
+  const isWeekend = selectedDate
+    ? [5, 6, 0].includes(new Date(selectedDate).getDay())
+    : [5, 6, 0].includes(new Date().getDay());
+
+  const applicableTimeSlots = isWeekend ? product.weekendTimeSlots : product.timeSlots;
+
+  const totalPrice = computeTotalPrice(applicableTimeSlots, watch("startTime"), watch("endTime"), rewards);
 
   const fetchRewards = async () => {
     setLoading(true);
@@ -352,7 +358,7 @@ export default function ProductDetail({ product }) {
         {
           <div className="flex justify-between items-center mb-2">
             <div className="flex gap-2 items-baseline">
-              <p className="text-green-900 text-2xl font-bold">₱{product.timeSlots[0].price}</p>
+              <p className="text-green-900 text-2xl font-bold">₱{applicableTimeSlots[0].price}</p>
               {rewards.length > 0 && (
                 <p style={{ color: "red", fontWeight: 600 }}>
                   {rewards[0].discountType === "percentage" ? `${rewards[0].discountValue}%` : rewards[0].discountValue}
@@ -360,7 +366,7 @@ export default function ProductDetail({ product }) {
               )}
             </div>
 
-            {product.timeSlots.length > 1 && (
+            {applicableTimeSlots.length > 1 && (
               <button
                 type="button"
                 onClick={() => setShowSlots(!showSlots)}
@@ -372,7 +378,7 @@ export default function ProductDetail({ product }) {
           </div>
         }
 
-        {showSlots && product.timeSlots && product.timeSlots.length > 1 && (
+        {showSlots && applicableTimeSlots && applicableTimeSlots.length > 1 && (
           <div className="mb-6">
             <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm bg-white">
               <table className="min-w-full divide-y divide-gray-200">
@@ -399,7 +405,7 @@ export default function ProductDetail({ product }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {product.timeSlots.map((slot, index) => (
+                  {applicableTimeSlots.map((slot, index) => (
                     <tr key={index} className="hover:bg-green-50 transition-colors duration-200">
                       <td className="px-6 py-4 whitespace-nowrap text-gray-700 font-medium">{slot.start}:00</td>
                       <td className="px-6 py-4 whitespace-nowrap text-gray-700 font-medium">{slot.end}:00</td>

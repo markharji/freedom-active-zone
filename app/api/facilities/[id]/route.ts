@@ -43,7 +43,8 @@ export async function PUT(req, { params }) {
   try {
     const data = await req.json();
 
-    const { name, sport, description, thumbnail, convertible, otherSports, timeSlots, hotspot } = data;
+    const { name, sport, description, thumbnail, convertible, otherSports, timeSlots, hotspot, weekendTimeSlots } =
+      data;
 
     // Required fields
     if (!name || !sport || !description) {
@@ -97,6 +98,41 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ message: "timeSlots must be an array" }, { status: 400 });
     }
 
+    let validWeekendTimeSlots: { start: number; end: number; price: number }[] = [];
+    if (Array.isArray(weekendTimeSlots)) {
+      validWeekendTimeSlots = weekendTimeSlots.map((slot, idx) => {
+        const { start, end, price } = slot;
+        if (
+          start == null ||
+          end == null ||
+          price == null ||
+          typeof start !== "number" ||
+          typeof end !== "number" ||
+          typeof price !== "number" ||
+          start < 6 ||
+          end > 23 ||
+          start >= end ||
+          price < 0
+        ) {
+          throw new Error(`Invalid time slot at index ${idx + 1}`);
+        }
+        return { start, end, price };
+      });
+
+      // Check for overlaps
+      for (let i = 0; i < validWeekendTimeSlots.length; i++) {
+        const a = validWeekendTimeSlots[i];
+        for (let j = i + 1; j < validWeekendTimeSlots.length; j++) {
+          const b = validWeekendTimeSlots[j];
+          if (!(a.end <= b.start || a.start >= b.end)) {
+            throw new Error(`Time slot ${i + 1} overlaps with slot ${j + 1}`);
+          }
+        }
+      }
+    } else {
+      return NextResponse.json({ message: "timeSlots must be an array" }, { status: 400 });
+    }
+
     // Update facility
     const updatedFacility = await Facility.findByIdAndUpdate(
       id,
@@ -108,6 +144,7 @@ export async function PUT(req, { params }) {
         convertible: isConvertible,
         otherSports: isConvertible ? validOtherSports : [],
         timeSlots: validTimeSlots,
+        weekendTimeSlots: validWeekendTimeSlots,
         hotspot,
       },
       { new: true },

@@ -113,7 +113,11 @@ export default function BookingModal({ open, onClose, slot, loading, fetchFacili
     return Math.max(0, total); // ensure total is not negative
   };
 
-  const totalPrice = computeTotalPrice(slot?.facility.timeSlots, watch("startTime"), watch("endTime"), rewards);
+  const isWeekend = selectedDate ? [5, 6, 0].includes(new Date(selectedDate).getDay()) : false;
+
+  const applicableTimeSlots = isWeekend ? slot?.facility?.weekendTimeSlots : slot?.facility?.timeSlots;
+
+  const totalPrice = computeTotalPrice(applicableTimeSlots, watch("startTime"), watch("endTime"), rewards);
 
   useEffect(() => {
     if (slot?.start) setValue("date", dayjs(slot.start));

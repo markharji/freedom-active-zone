@@ -37,6 +37,7 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
       description: "",
       images: [],
       timeSlots: [{ start: 6, end: 23, price: 0 }],
+      weekendTimeSlots: [{ start: 6, end: 23, price: 0 }],
     },
   });
 
@@ -86,6 +87,7 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
       formData.append("description", data.description);
 
       formData.append("timeSlots", JSON.stringify(data.timeSlots));
+      formData.append("weekendTimeSlots", JSON.stringify(data.weekendTimeSlots));
       formData.append("hotspot", JSON.stringify(data.hotspot));
 
       if (data.convertible) {
@@ -213,9 +215,11 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
               </TextField>
             )}
 
+            <TextField fullWidth label="Description" margin="normal" multiline rows={3} {...register("description")} />
+
             <Box mt={2}>
               <Typography variant="subtitle1" fontWeight="bold">
-                Prices
+                Weekday Prices
               </Typography>
 
               {(watch("timeSlots") || []).map((slot, index) => (
@@ -308,6 +312,102 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
                 Add Time Slot
               </Button>
             </Box>
+
+            <Box mt={2}>
+              <Typography variant="subtitle1" fontWeight="bold">
+                Weekend Prices
+              </Typography>
+
+              {(watch("weekendTimeSlots") || []).map((slot, index) => (
+                <Paper key={index} sx={{ p: 2, mt: 1, display: "flex", gap: 1, alignItems: "center" }} elevation={1}>
+                  {/* Start Hour Dropdown */}
+                  <TextField
+                    label="Start Hour"
+                    select
+                    value={slot.start}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      const updated = [...watch("weekendTimeSlots")];
+                      updated[index].start = value;
+                      setValue("weekendTimeSlots", updated);
+                    }}
+                    sx={{ flex: 1 }}
+                    required
+                  >
+                    {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
+                      <MenuItem key={hour} value={hour}>
+                        {hour}:00
+                      </MenuItem>
+                    ))}
+                  </TextField>
+
+                  {/* End Hour Dropdown */}
+                  <TextField
+                    label="End Hour"
+                    select
+                    value={slot.end}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      const updated = [...watch("weekendTimeSlots")];
+                      updated[index].end = value;
+                      setValue("weekendTimeSlots", updated);
+                    }}
+                    sx={{ flex: 1 }}
+                    required
+                  >
+                    {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
+                      <MenuItem key={hour} value={hour}>
+                        {hour}:00
+                      </MenuItem>
+                    ))}
+                  </TextField>
+
+                  {/* Price */}
+                  <TextField
+                    label="Price"
+                    type="number"
+                    value={slot.price}
+                    onChange={(e) => {
+                      const updated = [...watch("weekendTimeSlots")];
+                      updated[index].price = Number(e.target.value);
+                      setValue("weekendTimeSlots", updated);
+                    }}
+                    sx={{ width: 100 }}
+                    required
+                  />
+
+                  {/* Remove Slot */}
+                  <IconButton
+                    color="error"
+                    disabled={watch("weekendTimeSlots").length === 1} // prevent removing last slot
+                    onClick={() => {
+                      const updated = watch("weekendTimeSlots").filter((_, i) => i !== index);
+                      setValue("weekendTimeSlots", updated);
+                    }}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                </Paper>
+              ))}
+
+              {/* Error if no slots */}
+              {(!watch("weekendTimeSlots") || watch("weekendTimeSlots").length === 0) && (
+                <Typography color="error" variant="body2">
+                  At least one time slot is required
+                </Typography>
+              )}
+
+              <Button
+                variant="outlined"
+                fullWidth
+                sx={{ mt: 1 }}
+                onClick={() => {
+                  setValue("weekendTimeSlots", [...(watch("weekendTimeSlots") || []), { start: 6, end: 7, price: 0 }]);
+                }}
+              >
+                Add Time Slot
+              </Button>
+            </Box>
             {/* <TextField
             fullWidth
             label="Price"
@@ -320,8 +420,6 @@ export default function AddFacilityModal({ open, onClose, fetchFacilities, title
             error={!!errors.price}
             helperText={errors.price?.message}
           /> */}
-
-            <TextField fullWidth label="Description" margin="normal" multiline rows={3} {...register("description")} />
 
             {/* Upload Images */}
             <Button variant="contained" component="label" fullWidth sx={{ mt: 2 }} onClick={() => setOpenMarker(true)}>

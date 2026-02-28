@@ -55,6 +55,7 @@ export default function ProductDetailAdmin({ product }) {
       images: product.images || [],
       timeSlots: product.timeSlots || [{ start: 6, end: 23, price: 0 }],
       hotspot: product.hotspot || null,
+      weekendTimeSlots: product.weekendTimeSlots || [{ start: 6, end: 23, price: 0 }],
     },
   });
 
@@ -89,6 +90,7 @@ export default function ProductDetailAdmin({ product }) {
         description: data.description,
         timeSlots: data.timeSlots,
         hotspot: data.hotspot,
+        weekendTimeSlots: data.weekendTimeSlots,
       };
 
       const res = await fetch(`/api/facilities/${product._id}`, {
@@ -155,7 +157,7 @@ export default function ProductDetailAdmin({ product }) {
           ))}
         </Swiper>
 
-        <Paper
+        {/* <Paper
           {...getRootProps()}
           sx={{
             mt: 4,
@@ -167,7 +169,7 @@ export default function ProductDetailAdmin({ product }) {
         >
           <input {...getInputProps()} />
           <Typography>Drag & drop images here, or click to select</Typography>
-        </Paper>
+        </Paper> */}
       </div>
 
       {/* RIGHT SIDE - FORM */}
@@ -276,9 +278,26 @@ export default function ProductDetailAdmin({ product }) {
             )}
           /> */}
 
+          <Controller
+            name="description"
+            control={control}
+            rules={{ required: "Description is required" }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Description"
+                multiline
+                rows={4}
+                fullWidth
+                error={!!errors.description}
+                helperText={errors.description?.message}
+              />
+            )}
+          />
+
           <Box mt={2}>
             <Typography variant="subtitle1" fontWeight="bold">
-              Prices
+              Weekday Prices
             </Typography>
 
             {(watch("timeSlots") || []).map((slot, index) => (
@@ -372,23 +391,102 @@ export default function ProductDetailAdmin({ product }) {
             </Button>
           </Box>
 
-          {/* Description */}
-          <Controller
-            name="description"
-            control={control}
-            rules={{ required: "Description is required" }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Description"
-                multiline
-                rows={4}
-                fullWidth
-                error={!!errors.description}
-                helperText={errors.description?.message}
-              />
+          <Box mt={2}>
+            <Typography variant="subtitle1" fontWeight="bold">
+              Weekend Prices
+            </Typography>
+
+            {(watch("weekendTimeSlots") || []).map((slot, index) => (
+              <Paper key={index} sx={{ p: 2, mt: 1, display: "flex", gap: 1, alignItems: "center" }} elevation={1}>
+                {/* Start Hour Dropdown */}
+                <TextField
+                  label="Start Hour"
+                  select
+                  value={slot.start}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    const updated = [...watch("weekendTimeSlots")];
+                    updated[index].start = value;
+                    setValue("weekendTimeSlots", updated);
+                  }}
+                  sx={{ flex: 1 }}
+                  required
+                >
+                  {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
+                    <MenuItem key={hour} value={hour}>
+                      {hour}:00
+                    </MenuItem>
+                  ))}
+                </TextField>
+
+                {/* End Hour Dropdown */}
+                <TextField
+                  label="End Hour"
+                  select
+                  value={slot.end}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    const updated = [...watch("weekendTimeSlots")];
+                    updated[index].end = value;
+                    setValue("weekendTimeSlots", updated);
+                  }}
+                  sx={{ flex: 1 }}
+                  required
+                >
+                  {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
+                    <MenuItem key={hour} value={hour}>
+                      {hour}:00
+                    </MenuItem>
+                  ))}
+                </TextField>
+
+                {/* Price */}
+                <TextField
+                  label="Price"
+                  type="number"
+                  value={slot.price}
+                  onChange={(e) => {
+                    const updated = [...watch("weekendTimeSlots")];
+                    updated[index].price = Number(e.target.value);
+                    setValue("weekendTimeSlots", updated);
+                  }}
+                  sx={{ width: 100 }}
+                  required
+                />
+
+                {/* Remove Slot */}
+                <IconButton
+                  color="error"
+                  disabled={watch("weekendTimeSlots").length === 1} // prevent removing last slot
+                  onClick={() => {
+                    const updated = watch("weekendTimeSlots").filter((_, i) => i !== index);
+                    setValue("weekendTimeSlots", updated);
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Paper>
+            ))}
+
+            {/* Error if no slots */}
+            {(!watch("weekendTimeSlots") || watch("weekendTimeSlots").length === 0) && (
+              <Typography color="error" variant="body2">
+                At least one time slot is required
+              </Typography>
             )}
-          />
+
+            <Button
+              variant="outlined"
+              fullWidth
+              sx={{ mt: 1 }}
+              onClick={() => {
+                setValue("weekendTimeSlots", [...(watch("weekendTimeSlots") || []), { start: 6, end: 7, price: 0 }]);
+              }}
+            >
+              Add Time Slot
+            </Button>
+          </Box>
+          {/* Description */}
 
           <Button variant="contained" component="label" fullWidth sx={{ mt: 2 }} onClick={() => setOpenMarker(true)}>
             {watchHotspot ? "Update Hotspot" : "Add Hotspot"}
